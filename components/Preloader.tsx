@@ -7,7 +7,6 @@ import { gsap, registerGsap, prefersReducedMotion } from "@/lib/motion";
 import { getLenis } from "@/components/providers/SmoothScroll";
 import { HERO_REVEAL_EVENT } from "@/components/HeroWordmark";
 import SplitWordmark from "@/components/SplitWordmark";
-import { BRAND } from "@/lib/site";
 
 /** Six dedicated loader plates, independent of the catalogue. */
 const DECK = [1, 2, 3, 4, 5, 6].map((n) => `/preloader/image-0${n}.jpg`);
