@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Editorial commerce study
 
-## Getting Started
+A front-end study of an editorial commerce layout: a sixteen-column grid, three
+inverted themes, and a GSAP motion system. Built as a design/UX reference, not a
+storefront — there is no checkout and no payment path.
 
-First, run the development server:
+## Stack
+
+| | |
+|---|---|
+| Framework | Next.js (App Router, Turbopack) |
+| Styling | Tailwind v4, CSS-first `@theme` config |
+| Motion | GSAP + ScrollTrigger, SplitText, Flip, CustomEase |
+| Scroll | Lenis, driven off the GSAP ticker |
+
+## Run
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Motion
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Every timing lives in one table, `lib/motion.ts`. Change it there rather than in
+components — the feel of the whole site hangs off that file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Piece | Behaviour |
+|---|---|
+| Preloader | Counter 000→100, six cards dealt onto a stack, wordmark letters revealed by SplitText, then **Flip** morphs the loader wordmark onto the hero's box |
+| Hero | Rule scales from `origin-left`; meta row rises `yPercent 110 → 0`, staggered |
+| Card reveal | ScrollTrigger at `top 75%`; a curtain slides off while the image counter-moves behind it |
+| Card hover | Pure CSS: clip-path wipe, `scale 1.2 → 1`, and an exposure correction from blown-out to normal, all on one 500ms transition |
+| Route change | Clip-path curtain wipes up from the bottom edge and clears upward |
+| Cursor | 8px dot lerped on `expo.out`; scales up over `[data-cursor]` targets |
 
-## Learn More
+`prefers-reduced-motion` is honoured throughout: the preloader is skipped, Lenis
+and the custom cursor never initialise, and animated elements render at their
+final state.
 
-To learn more about Next.js, take a look at the following resources:
+## Themes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Three, not two — `light` (cream/black), `dark` (black/cream) and `red`
+(cream/red, the default). Implemented as Tailwind custom variants keyed off
+`data-theme`, with an inline script setting it before first paint so the stored
+choice never flashes. The nav sits in `mix-blend-difference`, so one set of
+colours reads correctly over all three.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Placeholder content
 
-## Deploy on Vercel
+The brand name, identity mark, product names, copy and imagery here are all
+generic stand-ins, and the product images are generated locally by
+`scripts/gen-placeholders.mjs`. Swap them for your own:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `lib/site.ts` — brand name, taglines, blurb
+- `components/Mark.tsx` — identity mark
+- `lib/products.ts` — catalogue
+- `scripts/gen-placeholders.mjs` — or just drop real images into `public/products/`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The display face is Archivo, a free grotesque standing in for a licensed one.
+
+## Known limits
+
+- The bag is `sessionStorage`-backed, not a real cart. No checkout exists.
+- Product data is static; there is no CMS or commerce backend.
