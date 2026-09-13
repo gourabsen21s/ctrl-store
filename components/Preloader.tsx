@@ -8,6 +8,29 @@ import { getLenis } from "@/components/providers/SmoothScroll";
 import { HERO_REVEAL_EVENT } from "@/components/HeroWordmark";
 import SplitWordmark from "@/components/SplitWordmark";
 
+const LOADER_KEY = "outfit-seen-loader";
+
+/**
+ * Decides before first paint whether the intro should run, so the plate is
+ * either painted immediately or never painted at all. Anything that defers
+ * this to an effect shows the page first and drops the loader over it.
+ */
+export const loaderScript = `
+(function(){
+  var d = document.documentElement;
+  try {
+    if (sessionStorage.getItem(${JSON.stringify(LOADER_KEY)}) === "1") {
+      d.dataset.loader = "seen";
+      d.classList.add("ready", "loaded");
+    } else {
+      d.dataset.loader = "pending";
+    }
+  } catch (e) {
+    d.dataset.loader = "pending";
+  }
+})();
+`;
+
 /** Six dedicated loader plates, independent of the catalogue. */
 const DECK = [1, 2, 3, 4, 5, 6].map((n) => `/preloader/image-0${n}.jpg`);
 
@@ -36,13 +59,22 @@ export default function Preloader({ onDone }: { onDone?: () => void }) {
 
   useGSAP(
     () => {
+      const root = document.documentElement;
       const finish = () => {
-        document.documentElement.classList.add("ready", "loaded");
+        root.classList.add("ready", "loaded");
+        root.dataset.loader = "seen";
+        try {
+          sessionStorage.setItem(LOADER_KEY, "1");
+        } catch {
+          /* private mode — the intro will simply run again next load */
+        }
         setGone(true);
         onDone?.();
       };
 
-      if (prefersReducedMotion()) {
+      // Already seen this tab, or motion is reduced: the plate is present in
+      // the markup but CSS keeps it unpainted, so tear it down without playing.
+      if (root.dataset.loader !== "pending" || prefersReducedMotion()) {
         finish();
         return;
       }

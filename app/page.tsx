@@ -1,7 +1,7 @@
 import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
-import HomeLoader from "@/components/HomeLoader";
+import Preloader from "@/components/Preloader";
 import { PRODUCTS } from "@/lib/products";
 
 /**
@@ -37,7 +37,7 @@ export default function Home() {
 
   return (
     <>
-      <HomeLoader />
+      <Preloader />
       <main id="page" data-page="home">
         <Hero />
 

@@ -1,39 +1,108 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { gsap, registerGsap, T, prefersReducedMotion } from "@/lib/motion";
+import { getLenis } from "@/components/providers/SmoothScroll";
 import Mark from "@/components/Mark";
 
 /**
- * Route curtain. Wipes up from the bottom edge to cover, then clears upward
- * once the new route has painted — a clip-path inset rather than a transform
- * so the mark stays put while the plate grows around it.
+ * Route curtain.
+ *
+ * Navigation is intercepted so the cover runs BEFORE the route changes. Keying
+ * this off usePathname alone cannot work: the pathname only updates once Next
+ * has already rendered the destination, so the new page would flash in first
+ * and the curtain would then wipe over a page the viewer had already seen.
+ *
+ * So: click -> cover -> push -> (pathname commits) -> reveal.
  */
 export default function TransitionLayer() {
   const layer = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const pathname = usePathname();
-  const first = useRef(true);
+  // Set when we drove the navigation ourselves, so a first paint or a back
+  // button press doesn't trigger a reveal of a curtain that never covered.
+  const covered = useRef(false);
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
     registerGsap();
 
-    // The preloader already covers the first paint.
-    if (first.current) {
-      first.current = false;
-      gsap.set(layer.current, { clipPath: "inset(0% 0% 100% 0%)", autoAlpha: 0 });
-      return;
-    }
+    const onClick = (e: MouseEvent) => {
+      // Leave modified clicks alone — they open tabs/windows.
+      if (e.defaultPrevented || e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 
-    const tl = gsap.timeline();
-    tl.set(layer.current, { autoAlpha: 1, clipPath: "inset(100% 0% 0% 0%)" })
-      .to(layer.current, { clipPath: "inset(0% 0% 0% 0%)", ...T.transition.in })
-      .to(layer.current, { clipPath: "inset(0% 0% 100% 0%)", ...T.transition.out }, ">0.1")
-      .set(layer.current, { autoAlpha: 0 });
+      const anchor = (e.target as Element | null)?.closest?.("a");
+      if (!anchor) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href || !href.startsWith("/")) return; // external, hash or mailto
+      if (anchor.target && anchor.target !== "_self") return;
+      if (href === pathname) return;
+
+      e.preventDefault();
+      covered.current = true;
+      getLenis()?.stop();
+
+      // Navigation must not depend on the animation finishing. GSAP is driven
+      // by rAF, which a browser suspends in a background tab — if the push only
+      // lived in the timeline callback, a click could animate nothing and go
+      // nowhere. Whichever fires first wins; the other is a no-op.
+      let navigated = false;
+      const go = () => {
+        if (navigated) return;
+        navigated = true;
+        router.push(href);
+      };
+
+      gsap
+        .timeline()
+        .set(layer.current, { autoAlpha: 1, clipPath: "inset(100% 0% 0% 0%)" })
+        .to(layer.current, { clipPath: "inset(0% 0% 0% 0%)", ...T.transition.in })
+        .call(go);
+
+      window.setTimeout(go, (T.transition.in.duration + 0.25) * 1000);
+    };
+
+    // Capture phase, not bubble. Next's <Link> attaches its own handler to the
+    // anchor, which in the bubble phase runs BEFORE a document-level listener —
+    // so it would navigate before this ever called preventDefault, and the
+    // curtain would never play. Link bails when defaultPrevented is set.
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [pathname, router]);
+
+  // Reveal once the destination has committed.
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    if (!covered.current) return;
+    covered.current = false;
+
+    window.scrollTo(0, 0);
+    getLenis()?.scrollTo(0, { immediate: true });
+
+    const node = layer.current;
+    let cleared = false;
+    const clear = () => {
+      if (cleared) return;
+      cleared = true;
+      gsap.set(node, { autoAlpha: 0, clipPath: "inset(0% 0% 100% 0%)" });
+      getLenis()?.start();
+    };
+
+    const tl = gsap
+      .timeline()
+      .to(node, { clipPath: "inset(0% 0% 100% 0%)", ...T.transition.out })
+      .call(clear);
+
+    // Mirror of the cover safety: a stalled ticker here would leave the curtain
+    // over the page permanently, with scroll still locked.
+    const timer = window.setTimeout(clear, (T.transition.out.duration + 0.25) * 1000);
 
     return () => {
       tl.kill();
+      window.clearTimeout(timer);
     };
   }, [pathname]);
 

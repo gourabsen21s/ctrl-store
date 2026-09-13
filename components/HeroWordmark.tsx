@@ -45,9 +45,10 @@ export default function HeroWordmark({ className = "" }: { className?: string })
       });
     };
 
-    // No preloader mounted (a repeat visit in the same tab) means no cue is
-    // coming, so play straight away.
-    if (!document.querySelector("[data-preloader]")) {
+    // One authoritative flag, set before first paint. Checking for the
+    // plate element instead is a race: it is server-rendered, so it exists
+    // even on a repeat visit where no cue will ever be sent.
+    if (document.documentElement.dataset.loader !== "pending") {
       play();
       return;
     }

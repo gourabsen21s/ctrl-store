@@ -86,6 +86,14 @@ html.lenis body {
   overflow: hidden;
 }
 
+/* The loader plate is server-rendered so it covers the very first paint.
+   On a repeat visit the inline script marks the document before paint and
+   this removes the plate outright — mounting it and hiding it afterwards is
+   what produced a flash of the page followed by the loader. */
+html[data-loader="seen"] [data-preloader] {
+  display: none !important;
+}
+
 /* Elements the motion system animates start hidden, so nothing flashes
    in at its final position before GSAP takes over. */
 html:not(.ready) [data-anim] {

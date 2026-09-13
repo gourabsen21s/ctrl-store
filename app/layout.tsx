@@ -3,6 +3,7 @@ import { Archivo } from "next/font/google";
 import "./globals.css";
 
 import ThemeProvider, { themeScript } from "@/components/providers/ThemeProvider";
+import { loaderScript } from "@/components/Preloader";
 import BagProvider from "@/components/providers/BagProvider";
 import SmoothScroll from "@/components/providers/SmoothScroll";
 import Nav from "@/components/Nav";
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         {/* Before first paint, so the stored theme never flashes. */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: loaderScript }} />
       </head>
       <body className="bg-cream text-black selection:bg-red selection:text-cream dark:bg-black dark:text-cream red:bg-cream red:text-red red:selection:bg-black">
         <ThemeProvider>
