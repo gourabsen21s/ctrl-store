@@ -27,24 +27,45 @@ export default function ProductCard({ product }: { product: Product }) {
       if (prefersReducedMotion()) return;
       registerGsap();
 
-      const curtain = root.current!.querySelector("[data-curtain]");
-      const front = root.current!.querySelector("[data-image='front']");
+      const curtain = root.current?.querySelector("[data-curtain]");
+      const front = root.current?.querySelector("[data-image='front']");
+      if (!curtain || !front) return;
 
-      gsap
-        .timeline({
-          scrollTrigger: { trigger: root.current, start: T.card.trigger, once: true },
-        })
-        .fromTo(
-          curtain,
-          { xPercent: 0 },
-          { xPercent: 100, duration: T.card.reveal.duration, ease: T.card.reveal.ease }
-        )
-        .fromTo(
-          front,
-          { xPercent: -60 },
-          { xPercent: 0, duration: T.card.reveal.duration, ease: T.card.reveal.ease },
-          "<"
-        );
+      // If card is already in the viewport on initial page render, reveal immediately
+      const rect = root.current?.getBoundingClientRect();
+      const inView = rect ? rect.top < window.innerHeight : false;
+
+      if (inView) {
+        gsap
+          .timeline({ delay: 0.15 })
+          .fromTo(
+            curtain,
+            { xPercent: 0 },
+            { xPercent: 100, duration: T.card.reveal.duration, ease: T.card.reveal.ease }
+          )
+          .fromTo(
+            front,
+            { xPercent: -40 },
+            { xPercent: 0, duration: T.card.reveal.duration, ease: T.card.reveal.ease },
+            "<"
+          );
+      } else {
+        gsap
+          .timeline({
+            scrollTrigger: { trigger: root.current, start: T.card.trigger, once: true },
+          })
+          .fromTo(
+            curtain,
+            { xPercent: 0 },
+            { xPercent: 100, duration: T.card.reveal.duration, ease: T.card.reveal.ease }
+          )
+          .fromTo(
+            front,
+            { xPercent: -40 },
+            { xPercent: 0, duration: T.card.reveal.duration, ease: T.card.reveal.ease },
+            "<"
+          );
+      }
     },
     { scope: root }
   );
@@ -86,7 +107,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <div
           data-curtain
           aria-hidden
-          className="absolute inset-0 h-full w-full bg-curtain dark:bg-neutral-800"
+          className="pointer-events-none absolute inset-0 h-full w-full bg-curtain dark:bg-neutral-800"
         />
 
         {/* Wishlist Heart Button */}

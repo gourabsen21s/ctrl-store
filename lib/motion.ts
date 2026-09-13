@@ -58,7 +58,7 @@ export const T = {
   },
   card: {
     reveal: { duration: 1.2, ease: "expo.out", stagger: 0.1 },
-    trigger: "top 75%",
+    trigger: "top 95%",
   },
   lines: {
     /** masked line reveals — menu items, headings */
