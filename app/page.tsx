@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import Preloader from "@/components/Preloader";
 import StorefrontControls from "@/components/StorefrontControls";
+import ReferralBanner from "@/components/ReferralBanner";
 import { getProducts } from "@/lib/products-db";
 
 export const dynamic = "force-dynamic";
@@ -122,6 +123,7 @@ export default async function Home({ searchParams }: HomePageProps) {
           )}
         </div>
 
+        <ReferralBanner />
         <Footer />
       </main>
     </>
