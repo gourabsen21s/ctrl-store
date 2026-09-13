@@ -54,8 +54,11 @@ export async function clearAdminSessionCookie(): Promise<void> {
 }
 
 export function validateAdminCredentials(username: string, password: string): boolean {
-  const expectedUser = process.env.ADMIN_USERNAME || "admin";
-  const expectedPass = process.env.ADMIN_PASSWORD || "admin123";
+  const expectedUser = (process.env.ADMIN_USERNAME || "admin").trim();
+  const expectedPass = (process.env.ADMIN_PASSWORD || "admin123").trim();
 
-  return username === expectedUser && password === expectedPass;
+  const userMatch = username.trim().toLowerCase() === expectedUser.toLowerCase();
+  const passMatch = password.trim() === expectedPass;
+
+  return userMatch && passMatch;
 }
