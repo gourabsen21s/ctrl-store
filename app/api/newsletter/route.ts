@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
 import SubscriberModel from "@/models/Subscriber";
 import { getAdminSession } from "@/lib/auth";
+import { sendVipWelcomeEmail } from "@/lib/email";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -48,6 +49,11 @@ export async function POST(req: NextRequest) {
       email: cleanEmail,
       status: "active",
       source,
+    });
+
+    // Send automated VIP welcome email via Resend
+    sendVipWelcomeEmail(cleanEmail).catch((err) => {
+      console.warn("Failed to dispatch VIP welcome email:", err);
     });
 
     return NextResponse.json(
