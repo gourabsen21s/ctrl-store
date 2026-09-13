@@ -3,6 +3,7 @@ import { getAdminSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import { OrderModel } from "@/models/Order";
 import { ProductModel } from "@/models/Product";
+import { CustomerModel } from "@/models/Customer";
 
 export async function GET() {
   try {
@@ -19,6 +20,8 @@ export async function GET() {
     const totalOrders = paidOrders.length;
     const grossRevenue = paidOrders.reduce((sum, order) => sum + (order.pricing?.total || 0), 0);
     const averageOrderValue = totalOrders > 0 ? grossRevenue / totalOrders : 0;
+
+    const totalCustomers = await CustomerModel.countDocuments();
 
     // 2. Get recent orders (last 5)
     const recentOrders = await OrderModel.find({})
@@ -57,6 +60,7 @@ export async function GET() {
       success: true,
       data: {
         totalOrders,
+        totalCustomers,
         grossRevenue,
         averageOrderValue,
         recentOrders,

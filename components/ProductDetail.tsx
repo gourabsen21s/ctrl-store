@@ -8,13 +8,15 @@ import { useBag } from "@/components/providers/BagProvider";
 import { useWishlist } from "@/components/providers/WishlistProvider";
 import ShareButton from "@/components/ShareButton";
 import ProductReviews from "@/components/ProductReviews";
+import SizeGuideModal from "@/components/SizeGuideModal";
+import CompleteTheLook from "@/components/CompleteTheLook";
 
 /**
  * Scrolling image column against a sticky info column. The stick is on an
  * inner wrapper rather than the column itself so it releases naturally at the
  * end of the gallery instead of jamming against the footer.
  */
-export default function ProductDetail({ product }: { product: Product }) {
+export default function ProductDetail({ product, relatedProducts }: { product: Product, relatedProducts?: Product[] }) {
   const { add } = useBag();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isSaved = isInWishlist(product.handle);
@@ -136,7 +138,10 @@ export default function ProductDetail({ product }: { product: Product }) {
                 <dd>{product.color}</dd>
               </div>
               <div className="flex items-center justify-between gap-4 border-t border-current/30 py-4">
-                <dt>Size</dt>
+                <div className="flex flex-col gap-1">
+                  <dt>Size</dt>
+                  <SizeGuideModal product={product} />
+                </div>
                 <dd className="flex flex-wrap justify-end gap-4">
                   {product.sizes.map((s) => (
                     <button
@@ -263,6 +268,11 @@ export default function ProductDetail({ product }: { product: Product }) {
 
       {/* Verified Customer Reviews Section */}
       <ProductReviews productHandle={product.handle} productTitle={product.title} />
+
+      {/* Complete the Look Cross-Sell */}
+      {relatedProducts && relatedProducts.length > 0 && (
+        <CompleteTheLook products={relatedProducts} />
+      )}
     </div>
   );
 }

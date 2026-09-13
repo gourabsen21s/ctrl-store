@@ -34,7 +34,7 @@ export default function AnalyticsTab({ showNotification }: { showNotification: (
   return (
     <div className="space-y-8 font-mono">
       {/* Top Level KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="border border-white/20 bg-[#121212] p-6 flex flex-col justify-between">
           <div className="text-xs uppercase tracking-widest text-white/50 mb-4">Gross Revenue</div>
           <div className="text-4xl font-bold text-white">{money(data.grossRevenue)}</div>
@@ -46,6 +46,10 @@ export default function AnalyticsTab({ showNotification }: { showNotification: (
         <div className="border border-white/20 bg-[#121212] p-6 flex flex-col justify-between">
           <div className="text-xs uppercase tracking-widest text-white/50 mb-4">Avg Order Value</div>
           <div className="text-4xl font-bold text-white">{money(data.averageOrderValue)}</div>
+        </div>
+        <div className="border border-white/20 bg-[#121212] p-6 flex flex-col justify-between">
+          <div className="text-xs uppercase tracking-widest text-white/50 mb-4">Registered Customers</div>
+          <div className="text-4xl font-bold text-white">{data.totalCustomers || 0}</div>
         </div>
       </div>
 

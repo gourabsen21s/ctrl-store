@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Footer from "@/components/Footer";
 import ProductDetail from "@/components/ProductDetail";
 import { PRODUCTS, money } from "@/lib/products";
-import { getProductByHandle } from "@/lib/products-db";
+import { getProductByHandle, getProducts } from "@/lib/products-db";
 
 export const dynamic = "force-dynamic";
 
@@ -62,9 +62,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const product = await getProductByHandle(handle);
   if (!product) notFound();
 
+  // Fetch 2 random products for "Complete the Look"
+  // For simplicity, we just fetch newest 4 and pick 2 that aren't the current one.
+  const { products: recentProducts } = await getProducts({ limit: 4 });
+  const relatedProducts = recentProducts.filter(p => p.handle !== product.handle).slice(0, 2);
+
   return (
     <main id="page" data-page="product">
-      <ProductDetail product={product} />
+      <ProductDetail product={product} relatedProducts={relatedProducts} />
       <Footer />
     </main>
   );
