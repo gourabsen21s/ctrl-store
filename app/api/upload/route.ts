@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
         {
           error: "Cloudinary is not configured.",
           details:
-            "Please provide NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your .env.local file.",
+            "Please provide CLOUDINARY_CLOUD_NAME (or NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME), CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your .env.local file.",
         },
         { status: 503 }
       );

@@ -40,14 +40,16 @@ function loadEnv() {
 
 loadEnv();
 
-const cloud_name = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const cloud_name =
+  process.env.CLOUDINARY_CLOUD_NAME ||
+  process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const api_key = process.env.CLOUDINARY_API_KEY;
 const api_secret = process.env.CLOUDINARY_API_SECRET;
 
 if (!cloud_name || !api_key || !api_secret) {
   console.error("Error: Missing Cloudinary credentials in .env.local");
   console.error("Required:");
-  console.error("  NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME");
+  console.error("  CLOUDINARY_CLOUD_NAME (or NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME)");
   console.error("  CLOUDINARY_API_KEY");
   console.error("  CLOUDINARY_API_SECRET");
   process.exit(1);
