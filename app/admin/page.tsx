@@ -529,17 +529,12 @@ export default function AdminDashboard() {
         backImage: formData.backImage,
       };
 
-      console.log("[Admin] Saving product. editingHandle:", editingHandle);
-      console.log("[Admin] Stock in form:", formData.stock, "→ parsed:", stockInt);
-
       if (isNaN(payload.price) || payload.price < 0) {
         throw new Error("Price must be a valid positive number");
       }
 
       const url = editingHandle ? `/api/products/${editingHandle}` : "/api/products";
       const method = editingHandle ? "PUT" : "POST";
-
-      console.log("[Admin] Fetching:", method, url);
 
       const res = await fetch(url, {
         method,
@@ -548,21 +543,18 @@ export default function AdminDashboard() {
       });
 
       const data = await res.json();
-      console.log("[Admin] Response status:", res.status, "| data:", JSON.stringify(data));
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to save product");
       }
 
-      // If editing, also fire the dedicated stock PATCH endpoint as a guaranteed write
+      // If editing, fire the dedicated stock PATCH endpoint as a guaranteed atomic write
       if (editingHandle) {
-        const stockRes = await fetch(`/api/admin/products/${editingHandle}/stock`, {
+        await fetch(`/api/admin/products/${editingHandle}/stock`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ stock: stockInt }),
         });
-        const stockData = await stockRes.json();
-        console.log("[Admin] Stock PATCH response:", stockRes.status, JSON.stringify(stockData));
       }
 
       // Immediately patch the local products state with the server's response
@@ -591,9 +583,7 @@ export default function AdminDashboard() {
 
       setIsModalOpen(false);
       showNotification(
-        editingHandle
-          ? `Product updated! Stock: ${stockInt}`
-          : "New product created and live!"
+        editingHandle ? "Product updated successfully!" : "New product created and live!"
       );
 
       if (!editingHandle) {
@@ -603,7 +593,6 @@ export default function AdminDashboard() {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Submission failed";
-      console.error("[Admin] Save error:", msg);
       setFormError(msg);
     } finally {
       setFormSubmitting(false);
