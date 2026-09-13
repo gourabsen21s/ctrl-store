@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import Mark from "@/components/Mark";
 import { useBag } from "@/components/providers/BagProvider";
 import { useWishlist } from "@/components/providers/WishlistProvider";
@@ -13,9 +14,15 @@ import { MenuPanel, MenuToggle } from "@/components/Menu";
  * It sits above the menu panel so the toggle stays clickable while open.
  */
 export default function Nav() {
+  const pathname = usePathname();
   const { count } = useBag();
   const { count: wishlistCount, openDrawer: openWishlist } = useWishlist();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Do not render storefront navigation on admin dashboard or admin login
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <>

@@ -480,28 +480,45 @@ export default function AdminDashboard() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center border-b border-white/10 pb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight uppercase">
-            {activeTab === "products" ? "Products Catalog" : "VIP Drop Waitlist"}
+            {activeTab === "products"
+              ? "Products Catalog"
+              : activeTab === "subscribers"
+              ? "VIP Drop Waitlist"
+              : "Social & Store Settings"}
           </h1>
           <p className="mt-1 text-xs font-mono text-white/50">
             Authenticated as <span className="text-white font-semibold">{adminUser}</span> •{" "}
-            {activeTab === "products" ? `${total} Total items` : `${subscribers.length} VIP Subscribers`}
+            {activeTab === "products"
+              ? `${total} Total items`
+              : activeTab === "subscribers"
+              ? `${subscribers.length} VIP Subscribers`
+              : `${socialLinks.filter((s) => s.enabled).length} Active Channels`}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          {activeTab === "products" ? (
+          {activeTab === "products" && (
             <button
               onClick={openCreateModal}
               className="flex items-center gap-2 bg-white px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:bg-neutral-200 active:scale-95"
             >
               <span>+ Add Product</span>
             </button>
-          ) : (
+          )}
+          {activeTab === "subscribers" && (
             <button
               onClick={exportSubscribersCsv}
               className="flex items-center gap-2 bg-white px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:bg-neutral-200 active:scale-95"
             >
               <span>↓ Export CSV</span>
+            </button>
+          )}
+          {activeTab === "settings" && (
+            <button
+              onClick={addCustomSocial}
+              className="flex items-center gap-2 bg-white px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:bg-neutral-200 active:scale-95"
+            >
+              <span>+ Add Channel</span>
             </button>
           )}
           <button

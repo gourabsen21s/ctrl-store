@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { THEMES, useTheme, type Theme } from "@/components/providers/ThemeProvider";
 
 const SWATCH: Record<Theme, string> = {
@@ -21,17 +22,23 @@ const LABEL: Record<Theme, string> = {
  * correct if the swatch size or gap changes.
  */
 export default function ThemeSwitcher() {
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const row = useRef<HTMLDivElement>(null);
   const pip = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
+    if (pathname?.startsWith("/admin")) return;
     const active = row.current?.querySelector<HTMLButtonElement>(`[data-theme-key="${theme}"]`);
     if (!active || !pip.current) return;
     const x = active.offsetLeft + active.offsetWidth / 2 - pip.current.offsetWidth / 2;
     const y = active.offsetTop + active.offsetHeight / 2 - pip.current.offsetHeight / 2;
     pip.current.style.transform = `translate(${x}px, ${y}px)`;
-  }, [theme]);
+  }, [theme, pathname]);
+
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <div

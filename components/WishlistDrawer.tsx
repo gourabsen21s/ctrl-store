@@ -3,11 +3,13 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useWishlist } from "@/components/providers/WishlistProvider";
 import { useBag } from "@/components/providers/BagProvider";
 import { money } from "@/lib/products";
 
 export default function WishlistDrawer() {
+  const pathname = usePathname();
   const { items, count, isDrawerOpen, closeDrawer, removeItem, clearWishlist } = useWishlist();
   const { add } = useBag();
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -35,7 +37,7 @@ export default function WishlistDrawer() {
     };
   }, [isDrawerOpen]);
 
-  if (!isDrawerOpen) return null;
+  if (pathname?.startsWith("/admin") || !isDrawerOpen) return null;
 
   const handleMoveToBag = (item: (typeof items)[0]) => {
     if (item.stock === 0) return;
