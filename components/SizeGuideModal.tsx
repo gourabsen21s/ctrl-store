@@ -29,13 +29,13 @@ export default function SizeGuideModal({ product }: { product: Product }) {
 
   const modal = (
     <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center bg-black/80 transition-opacity ${
+      className={`fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/80 transition-opacity ${
         open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
       onClick={() => setOpen(false)}
     >
       <div
-        className={`relative w-full max-w-2xl bg-[#ede4dd] text-black dark:bg-[#0a0a0a] dark:text-[#ede4dd] p-8 md:p-12 transition-transform duration-300 ${
+        className={`relative w-full max-w-2xl bg-[#ede4dd] text-black dark:bg-[#0a0a0a] dark:text-[#ede4dd] p-8 md:p-12 my-8 md:my-16 transition-transform duration-300 ${
           open ? "scale-100 translate-y-0" : "scale-95 translate-y-4"
         }`}
         onClick={(e) => e.stopPropagation()}
