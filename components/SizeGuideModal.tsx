@@ -32,6 +32,7 @@ export default function SizeGuideModal({ product }: { product: Product }) {
       className={`fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/80 transition-opacity ${
         open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
+      data-lenis-prevent
       onClick={() => setOpen(false)}
     >
       <div

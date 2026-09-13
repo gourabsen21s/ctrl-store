@@ -1478,7 +1478,7 @@ export default function AdminDashboard() {
 
       {/* CREATE / EDIT MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+        <div data-lenis-prevent className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="relative w-full max-w-2xl border border-white/20 bg-[#141414] p-6 sm:p-8 shadow-2xl my-8 md:my-16">
             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
               <div>
@@ -1800,7 +1800,7 @@ export default function AdminDashboard() {
 
       {/* ADD REVIEW MODAL */}
       {isReviewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+        <div data-lenis-prevent className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="relative w-full max-w-xl border border-white/20 bg-[#141414] p-6 sm:p-8 shadow-2xl my-8 md:my-16">
             <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
               <div>
@@ -1957,7 +1957,7 @@ export default function AdminDashboard() {
 
       {/* DELETE CONFIRMATION MODAL */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+        <div data-lenis-prevent className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="w-full max-w-md border border-red/40 bg-[#171010] p-6 shadow-2xl my-8 md:my-auto">
             <h3 className="text-base font-bold uppercase tracking-tight text-white mb-2">
               Confirm Delete Product
