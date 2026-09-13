@@ -3,20 +3,39 @@ import { getAdminSession } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/db";
 import ProductModel from "@/models/Product";
 import { type Product } from "@/lib/products";
-import { getProducts, ensureDbSeeded } from "@/lib/products-db";
+import { getProducts, getCatalogMeta, ensureDbSeeded } from "@/lib/products-db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const metaOnly = searchParams.get("meta") === "true";
+
+    if (metaOnly) {
+      const meta = await getCatalogMeta();
+      return NextResponse.json({ success: true, ...meta });
+    }
+
     const q = searchParams.get("q") || "";
     const category = searchParams.get("category") || "All";
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "12", 10);
-    const sortBy = (searchParams.get("sortBy") as "newest" | "price-asc" | "price-desc") || "newest";
+    const sortBy = (searchParams.get("sortBy") as "newest" | "price-asc" | "price-desc" | "title-asc") || "newest";
+    const minPriceParam = searchParams.get("minPrice");
+    const maxPriceParam = searchParams.get("maxPrice");
+    const minPrice = minPriceParam !== null ? Number(minPriceParam) : undefined;
+    const maxPrice = maxPriceParam !== null ? Number(maxPriceParam) : undefined;
 
-    const result = await getProducts({ q, category, page, limit, sortBy });
+    const result = await getProducts({
+      q,
+      category,
+      page,
+      limit,
+      sortBy,
+      minPrice,
+      maxPrice,
+    });
     return NextResponse.json(result);
   } catch (error) {
     console.error("GET /api/products error:", error);

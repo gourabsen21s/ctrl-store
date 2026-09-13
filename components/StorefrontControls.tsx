@@ -81,38 +81,48 @@ export default function StorefrontControls({
           })}
         </div>
 
-        {/* Search Field */}
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
-          <div className="relative">
-            <input
-              type="text"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search catalog..."
+        {/* Search Field & Store Link */}
+        <div className="flex flex-wrap items-center gap-3">
+          <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
+            <div className="relative">
+              <input
+                type="text"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search catalog..."
+                data-cursor
+                className="w-full sm:w-56 border border-current/30 bg-transparent px-3 py-1.5 text-xs placeholder:text-current/40 focus:border-current focus:outline-none uppercase tracking-wide"
+              />
+              {q && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQ("");
+                    updateParams({ q: null, page: "1" });
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs opacity-50 hover:opacity-100"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
               data-cursor
-              className="w-full sm:w-56 border border-current/30 bg-transparent px-3 py-1.5 text-xs placeholder:text-current/40 focus:border-current focus:outline-none uppercase tracking-wide"
-            />
-            {q && (
-              <button
-                type="button"
-                onClick={() => {
-                  setQ("");
-                  updateParams({ q: null, page: "1" });
-                }}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs opacity-50 hover:opacity-100"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          <button
-            type="submit"
+              className="border border-current/40 px-3.5 py-1.5 text-xs uppercase tracking-wider hover:border-current transition-colors"
+            >
+              {isPending ? "..." : "Find"}
+            </button>
+          </form>
+
+          <a
+            href="/store"
             data-cursor
-            className="border border-current/40 px-3.5 py-1.5 text-xs uppercase tracking-wider hover:border-current transition-colors"
+            className="border border-current/30 px-3.5 py-1.5 text-xs font-mono uppercase tracking-widest hover:bg-current/10 transition-colors hidden sm:inline-block"
           >
-            {isPending ? "..." : "Find"}
-          </button>
-        </form>
+            All Filters &amp; Store →
+          </a>
+        </div>
       </div>
 
       {/* Filter Status Summary */}
@@ -139,52 +149,6 @@ export default function StorefrontControls({
           >
             Reset All Filters
           </button>
-        </div>
-      )}
-
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="mt-8 flex items-center justify-between border-t border-current/15 pt-6 text-xs uppercase tracking-wider">
-          <p className="opacity-60">
-            Page {currentPage} of {totalPages} ({total} items)
-          </p>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              data-cursor
-              disabled={currentPage <= 1 || isPending}
-              onClick={() => handlePageChange(currentPage - 1)}
-              className="border border-current/30 px-3 py-1 hover:border-current disabled:opacity-20 transition-opacity"
-            >
-              ← Prev
-            </button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
-                <button
-                  key={num}
-                  type="button"
-                  data-cursor
-                  onClick={() => handlePageChange(num)}
-                  className={`h-7 w-7 border text-center transition-all ${
-                    currentPage === num
-                      ? "border-current bg-current text-cream dark:text-black font-bold"
-                      : "border-current/20 hover:border-current/60"
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              data-cursor
-              disabled={currentPage >= totalPages || isPending}
-              onClick={() => handlePageChange(currentPage + 1)}
-              className="border border-current/30 px-3 py-1 hover:border-current disabled:opacity-20 transition-opacity"
-            >
-              Next →
-            </button>
-          </div>
         </div>
       )}
     </div>

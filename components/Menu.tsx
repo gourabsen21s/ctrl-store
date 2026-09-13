@@ -7,7 +7,8 @@ import { gsap, registerGsap, T, prefersReducedMotion } from "@/lib/motion";
 import { getLenis } from "@/components/providers/SmoothScroll";
 
 const LINKS = [
-  { label: "Shop", href: "/" },
+  { label: "Home", href: "/" },
+  { label: "Store", href: "/store" },
   { label: "Wishlist", href: "/wishlist" },
   { label: "Bag", href: "/bag" },
   { label: "Account", href: "/account" },

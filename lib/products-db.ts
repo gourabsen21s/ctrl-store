@@ -29,7 +29,9 @@ export type QueryProductsOptions = {
   category?: string;
   page?: number;
   limit?: number;
-  sortBy?: "newest" | "price-asc" | "price-desc";
+  sortBy?: "newest" | "price-asc" | "price-desc" | "title-asc";
+  minPrice?: number;
+  maxPrice?: number;
 };
 
 export type QueryProductsResult = {
@@ -39,12 +41,27 @@ export type QueryProductsResult = {
   currentPage: number;
 };
 
+export type CatalogMeta = {
+  categories: string[];
+  minPrice: number;
+  maxPrice: number;
+  totalProducts: number;
+};
+
 /**
- * Retrieves products strictly from MongoDB.
+ * Retrieves products strictly from MongoDB with full pagination, search, price range, and sorting.
  * No static fallback: MongoDB is the single source of truth.
  */
 export async function getProducts(options: QueryProductsOptions = {}): Promise<QueryProductsResult> {
-  const { q = "", category = "All", page = 1, limit = 12, sortBy = "newest" } = options;
+  const {
+    q = "",
+    category = "All",
+    page = 1,
+    limit = 12,
+    sortBy = "newest",
+    minPrice,
+    maxPrice,
+  } = options;
   const safePage = Math.max(1, Number(page) || 1);
   const safeLimit = Math.max(1, Number(limit) || 12);
 
@@ -63,9 +80,26 @@ export async function getProducts(options: QueryProductsOptions = {}): Promise<Q
     filter.category = { $regex: new RegExp(`^${category}$`, "i") };
   }
 
+  // Price range filtering
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const priceFilter: Record<string, any> = {};
+    if (minPrice !== undefined && !isNaN(minPrice)) priceFilter.$gte = Number(minPrice);
+    if (maxPrice !== undefined && !isNaN(maxPrice)) priceFilter.$lte = Number(maxPrice);
+    if (Object.keys(priceFilter).length > 0) {
+      filter.price = priceFilter;
+    }
+  }
+
   if (q.trim()) {
     const regex = new RegExp(q.trim(), "i");
-    filter.$or = [{ title: regex }, { category: regex }, { description: regex }, { color: regex }];
+    filter.$or = [
+      { title: regex },
+      { category: regex },
+      { description: regex },
+      { color: regex },
+      { handle: regex },
+    ];
   }
 
   // Sort criteria
@@ -73,6 +107,7 @@ export async function getProducts(options: QueryProductsOptions = {}): Promise<Q
   let sort: Record<string, any> = { createdAt: -1 };
   if (sortBy === "price-asc") sort = { price: 1 };
   if (sortBy === "price-desc") sort = { price: -1 };
+  if (sortBy === "title-asc") sort = { title: 1 };
 
   const total = await ProductModel.countDocuments(filter);
   const docs = await ProductModel.find(filter)
@@ -100,8 +135,46 @@ export async function getProducts(options: QueryProductsOptions = {}): Promise<Q
   return {
     products,
     total,
-    totalPages: Math.ceil(total / safeLimit) || 1,
+    totalPages: Math.max(1, Math.ceil(total / safeLimit)),
     currentPage: safePage,
+  };
+}
+
+/**
+ * Returns metadata about the entire catalog (all distinct categories, min price, max price).
+ */
+export async function getCatalogMeta(): Promise<CatalogMeta> {
+  const db = await connectToDatabase();
+  if (!db) {
+    return { categories: ["All"], minPrice: 0, maxPrice: 10000, totalProducts: 0 };
+  }
+
+  await ensureDbSeeded();
+
+  const [distinctCategories, priceStats, totalProducts] = await Promise.all([
+    ProductModel.distinct("category"),
+    ProductModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          minPrice: { $min: "$price" },
+          maxPrice: { $max: "$price" },
+        },
+      },
+    ]),
+    ProductModel.countDocuments(),
+  ]);
+
+  const rawCategories = (distinctCategories as string[]).filter(Boolean);
+  const categories = ["All", ...rawCategories.sort()];
+  const minPrice = priceStats[0]?.minPrice ?? 0;
+  const maxPrice = priceStats[0]?.maxPrice ?? 5000;
+
+  return {
+    categories,
+    minPrice,
+    maxPrice,
+    totalProducts,
   };
 }
 

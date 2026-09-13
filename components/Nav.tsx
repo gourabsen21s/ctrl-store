@@ -44,12 +44,39 @@ export default function Nav() {
           <div className="flex items-center gap-3 md:gap-16">
             <ul className="hidden items-center gap-8 text-lg tracking-tight md:flex md:gap-16 md:text-2xl">
               <li>
-                <Link href="/" data-cursor className="underline underline-offset-[6px]">
-                  Shop
+                <Link
+                  href="/"
+                  data-cursor
+                  className={`transition-opacity hover:opacity-70 ${
+                    pathname === "/"
+                      ? "underline underline-offset-[6px]"
+                      : ""
+                  }`}
+                >
+                  Home
                 </Link>
               </li>
               <li>
-                <Link href="/account" data-cursor className="transition-opacity hover:opacity-70">
+                <Link
+                  href="/store"
+                  data-cursor
+                  className={`transition-opacity hover:opacity-70 ${
+                    pathname === "/store" || pathname === "/shop"
+                      ? "underline underline-offset-[6px]"
+                      : ""
+                  }`}
+                >
+                  Store
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/account"
+                  data-cursor
+                  className={`transition-opacity hover:opacity-70 ${
+                    pathname === "/account" ? "underline underline-offset-[6px]" : ""
+                  }`}
+                >
                   Account
                 </Link>
               </li>

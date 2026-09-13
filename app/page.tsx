@@ -2,9 +2,10 @@ import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import Preloader from "@/components/Preloader";
-import StorefrontControls from "@/components/StorefrontControls";
 import ReferralBanner from "@/components/ReferralBanner";
+import HomePagination from "@/components/HomePagination";
 import { getProducts } from "@/lib/products-db";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -66,14 +67,28 @@ export default async function Home({ searchParams }: HomePageProps) {
       <main id="page" data-page="home">
         <Hero />
 
-        {/* Storefront Search, Category & Pagination Controls */}
-        <StorefrontControls
-          total={total}
-          currentCategory={category}
-          currentQuery={q}
-          currentPage={currentPage}
-          totalPages={totalPages}
-        />
+        {/* Latest Drops Section Header */}
+        <div className="px-4 lg:px-6 mb-12">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-current/20 pb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2 text-xs font-mono uppercase tracking-widest opacity-60">
+                <span className="h-2 w-2 rounded-full bg-red animate-pulse" />
+                <span>SIGNATURE CURATION</span>
+              </div>
+              <h2 className="text-3xl sm:text-5xl font-[900] tracking-tighter uppercase leading-none">
+                LATEST DROPS
+              </h2>
+            </div>
+            <Link
+              href="/store"
+              data-cursor
+              className="inline-flex items-center gap-2 border border-current/30 px-5 py-2.5 font-mono text-xs uppercase tracking-widest hover:bg-current/10 transition-colors w-fit"
+            >
+              <span>OPEN FULL STORE &amp; FILTERS</span>
+              <span>→</span>
+            </Link>
+          </div>
+        </div>
 
         <div className="px-4 lg:px-6">
           {products.length === 0 ? (
@@ -113,13 +128,24 @@ export default async function Home({ searchParams }: HomePageProps) {
 
               {/* Any additional products beyond 13 on page 1 */}
               {extra.length > 0 && (
-                <section className="mb-34 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
-                  {extra.map((p) => (
-                    <ProductCard key={p.handle} product={p} />
-                  ))}
-                </section>
-              )}
-            </>
+                 <section className="mb-34 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+                   {extra.map((p) => (
+                     <ProductCard key={p.handle} product={p} />
+                   ))}
+                 </section>
+               )}
+             </>
+           )}
+
+          {/* Bottom Pagination & Store CTA */}
+          {products.length > 0 && (
+            <HomePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              total={total}
+              category={category}
+              query={q}
+            />
           )}
         </div>
 
