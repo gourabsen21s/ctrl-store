@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { imageFor, money, type Product } from "@/lib/products";
 import { useBag } from "@/components/providers/BagProvider";
+import ShareButton from "@/components/ShareButton";
 
 /**
  * Scrolling image column against a sticky info column. The stick is on an
@@ -122,6 +123,9 @@ export default function ProductDetail({ product }: { product: Product }) {
             >
               {added ? "Added to Bag" : "Add to Bag"} <span aria-hidden>↗</span>
             </button>
+
+            {/* WhatsApp & Social Share */}
+            <ShareButton product={product} />
           </div>
         </div>
       </div>

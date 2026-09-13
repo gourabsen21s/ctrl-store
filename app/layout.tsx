@@ -21,9 +21,32 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
-  title: `${BRAND}® — editorial commerce study`,
+  title: `${BRAND}® — Signature Apparel & Goods`,
   description:
-    "A sixteen-column editorial commerce layout with three inverted themes and a GSAP motion system.",
+    "Curated apparel, heavy-gauge fleece, and tactical carry. Designed and crafted with precision.",
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    siteName: BRAND,
+    title: `${BRAND}® // Signature Apparel & Goods`,
+    description: "Curated apparel, heavy-gauge fleece, and tactical carry.",
+    images: [
+      {
+        url: "https://res.cloudinary.com/gnjuglvy/image/upload/v1789289451/ctrl-store/products/heavy-tee-black-front.jpg",
+        width: 1200,
+        height: 630,
+        alt: `${BRAND} Signature Collection`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${BRAND}® // Signature Apparel & Goods`,
+    description: "Curated apparel, heavy-gauge fleece, and tactical carry.",
+    images: [
+      "https://res.cloudinary.com/gnjuglvy/image/upload/v1789289451/ctrl-store/products/heavy-tee-black-front.jpg",
+    ],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -35,10 +58,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${archivo.variable} antialiased`}
     >
-      <head>
+      <head suppressHydrationWarning>
         {/* Before first paint, so the stored theme never flashes. */}
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <script dangerouslySetInnerHTML={{ __html: loaderScript }} />
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: loaderScript }} />
       </head>
       <body className="bg-cream text-black selection:bg-red selection:text-cream dark:bg-black dark:text-cream red:bg-cream red:text-red red:selection:bg-black">
         <ThemeProvider>
