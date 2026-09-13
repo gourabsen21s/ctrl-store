@@ -44,11 +44,13 @@ export interface IOrder extends Document {
     paidAt?: Date;
   };
   fulfillment: {
-    status: "processing" | "dispatched" | "delivered" | "cancelled";
+    status: "processing" | "packed" | "dispatched" | "delivered" | "cancelled";
     courierName?: string;
     trackingNumber?: string;
     trackingUrl?: string;
+    packedAt?: Date;
     dispatchedAt?: Date;
+    deliveredAt?: Date;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -105,11 +107,17 @@ const OrderSchema = new Schema<IOrder>(
       paidAt: { type: Date },
     },
     fulfillment: {
-      status: { type: String, enum: ["processing", "dispatched", "delivered", "cancelled"], default: "processing" },
+      status: {
+        type: String,
+        enum: ["processing", "packed", "dispatched", "delivered", "cancelled"],
+        default: "processing",
+      },
       courierName: { type: String, trim: true },
       trackingNumber: { type: String, trim: true },
       trackingUrl: { type: String, trim: true },
+      packedAt: { type: Date },
       dispatchedAt: { type: Date },
+      deliveredAt: { type: Date },
     },
   },
   {

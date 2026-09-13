@@ -12,6 +12,7 @@ export interface IProduct extends Document {
   stock?: number;
   frontImage?: string;
   backImage?: string;
+  dropDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,13 +74,21 @@ const ProductSchema = new Schema<IProduct>(
       default: 15,
       min: 0,
     },
+    dropDate: {
+      type: Date,
+      index: true,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Prevent re-registering model upon hot reloads in development
+// In development, invalidate cached model if schema was updated with dropDate
+if (mongoose.models?.Product && !mongoose.models.Product.schema.path("dropDate")) {
+  delete (mongoose.models as Record<string, unknown>).Product;
+}
+
 export const ProductModel: Model<IProduct> =
   (mongoose.models?.Product as Model<IProduct>) ||
   mongoose.model<IProduct>("Product", ProductSchema);

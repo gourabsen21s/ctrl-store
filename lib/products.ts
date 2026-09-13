@@ -14,6 +14,7 @@ export type Product = {
   stock?: number;
   frontImage?: string;
   backImage?: string;
+  dropDate?: string | Date;
   createdAt?: string | Date;
   updatedAt?: string | Date;
 };

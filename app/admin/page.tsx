@@ -46,6 +46,7 @@ interface ProductFormData {
   description: string;
   frontImage: string;
   backImage: string;
+  dropDate: string;
 }
 
 const INITIAL_FORM: ProductFormData = {
@@ -60,7 +61,20 @@ const INITIAL_FORM: ProductFormData = {
   description: "",
   frontImage: "",
   backImage: "",
+  dropDate: "",
 };
+
+function toDateTimeLocal(val?: string | Date | null): string {
+  if (!val) return "";
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
 
 const COMMON_SIZES = ["S", "M", "L", "XL", "2XL", "One size", "24L"];
 
@@ -439,6 +453,7 @@ export default function AdminDashboard() {
       description: p.description || "",
       frontImage: p.frontImage || "",
       backImage: p.backImage || "",
+      dropDate: toDateTimeLocal(p.dropDate),
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -527,6 +542,7 @@ export default function AdminDashboard() {
         description: formData.description,
         frontImage: formData.frontImage,
         backImage: formData.backImage,
+        dropDate: formData.dropDate ? new Date(formData.dropDate).toISOString() : null,
       };
 
       if (isNaN(payload.price) || payload.price < 0) {
@@ -567,6 +583,7 @@ export default function AdminDashboard() {
                   description: saved.description,
                   frontImage: saved.frontImage,
                   backImage: saved.backImage,
+                  dropDate: saved.dropDate,
                 }
               : p
           )
@@ -961,6 +978,20 @@ export default function AdminDashboard() {
                               <span className="text-[10px] text-white/40">↗</span>
                             </Link>
                             <p className="text-[10px] text-white/40">{product.handle}</p>
+                            {product.dropDate && (
+                              <div className="mt-1">
+                                {new Date(product.dropDate) > new Date() ? (
+                                  <span className="inline-flex items-center gap-1 rounded bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-mono font-semibold text-amber-300 border border-amber-500/30">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                                    DROP: {new Date(product.dropDate).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 rounded bg-white/10 px-1.5 py-0.5 text-[9px] font-mono text-white/60">
+                                    ✓ DROPPED
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -1813,6 +1844,44 @@ export default function AdminDashboard() {
                       />
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Drop Schedule / Launch Timer */}
+              <div className="border border-white/20 bg-[#181818] p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-400 font-mono text-sm">⚡</span>
+                    <label className="text-xs font-mono font-bold uppercase tracking-wider text-white">
+                      Drop Countdown &amp; Launch Schedule
+                    </label>
+                  </div>
+                  {formData.dropDate && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, dropDate: "" })}
+                      className="text-[10px] font-mono text-red-400 hover:text-red-300 underline underline-offset-2"
+                    >
+                      Clear Schedule (Make Available Immediately)
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-white/50 font-mono">
+                  Set a future date &amp; time to lock this product. An animated countdown banner will appear on the homepage, and the &quot;Add to Bag&quot; button will automatically unlock the second the clock hits zero.
+                </p>
+                <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <input
+                    type="datetime-local"
+                    value={formData.dropDate}
+                    onChange={(e) => setFormData({ ...formData, dropDate: e.target.value })}
+                    className="border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none w-full sm:w-auto"
+                  />
+                  {formData.dropDate && (
+                    <span className="text-xs font-mono text-amber-400 flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
+                      Scheduled: {new Date(formData.dropDate).toLocaleString()}
+                    </span>
+                  )}
                 </div>
               </div>
 

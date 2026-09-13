@@ -56,6 +56,9 @@ export async function PUT(req: NextRequest, { params }: Context) {
     if (body.stock !== undefined) update.stock = Math.max(0, Math.floor(Number(body.stock)));
     if (body.frontImage !== undefined) update.frontImage = String(body.frontImage).trim();
     if (body.backImage !== undefined) update.backImage = String(body.backImage).trim();
+    if (body.dropDate !== undefined) {
+      update.dropDate = body.dropDate ? new Date(body.dropDate) : null;
+    }
 
     console.log(`[PUT /api/products/${handle}] Updating stock →`, update.stock);
 

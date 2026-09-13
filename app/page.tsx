@@ -4,7 +4,8 @@ import ProductCard from "@/components/ProductCard";
 import Preloader from "@/components/Preloader";
 import ReferralBanner from "@/components/ReferralBanner";
 import HomePagination from "@/components/HomePagination";
-import { getProducts } from "@/lib/products-db";
+import DropCountdownBanner from "@/components/DropCountdownBanner";
+import { getProducts, getUpcomingDrop } from "@/lib/products-db";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -47,12 +48,17 @@ export default async function Home({ searchParams }: HomePageProps) {
   const category = params?.category || "All";
   const page = parseInt(params?.page || "1", 10);
 
-  const { products, total, totalPages, currentPage } = await getProducts({
-    q,
-    category,
-    page,
-    limit: 13,
-  });
+  const [productsData, upcomingDrop] = await Promise.all([
+    getProducts({
+      q,
+      category,
+      page,
+      limit: 13,
+    }),
+    getUpcomingDrop(),
+  ]);
+
+  const { products, total, totalPages, currentPage } = productsData;
 
   const isFiltered = (category !== "All" && Boolean(category)) || Boolean(q.trim()) || page > 1;
 
@@ -66,6 +72,9 @@ export default async function Home({ searchParams }: HomePageProps) {
       <Preloader />
       <main id="page" data-page="home">
         <Hero />
+
+        {/* Animated Drop Countdown Banner */}
+        <DropCountdownBanner product={upcomingDrop} />
 
         {/* Latest Drops Section Header */}
         <div className="px-4 lg:px-6 mb-12">

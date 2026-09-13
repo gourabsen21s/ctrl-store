@@ -128,6 +128,7 @@ export async function getProducts(options: QueryProductsOptions = {}): Promise<Q
     stock: d.stock !== undefined ? d.stock : 15,
     frontImage: d.frontImage || "",
     backImage: d.backImage || "",
+    dropDate: d.dropDate ? new Date(d.dropDate).toISOString() : undefined,
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
   }));
@@ -179,6 +180,39 @@ export async function getCatalogMeta(): Promise<CatalogMeta> {
 }
 
 /**
+ * Retrieves the nearest upcoming drop (earliest dropDate in the future).
+ */
+export async function getUpcomingDrop(): Promise<Product | null> {
+  const db = await connectToDatabase();
+  if (!db) return null;
+
+  await ensureDbSeeded();
+
+  const doc = await ProductModel.findOne({ dropDate: { $gt: new Date() } })
+    .sort({ dropDate: 1 })
+    .lean();
+
+  if (!doc) return null;
+
+  return {
+    handle: doc.handle,
+    title: doc.title,
+    price: doc.price,
+    category: doc.category,
+    color: doc.color,
+    sizes: doc.sizes || ["One size"],
+    aspect: doc.aspect || "large",
+    description: doc.description || "",
+    stock: doc.stock !== undefined ? doc.stock : 15,
+    frontImage: doc.frontImage || "",
+    backImage: doc.backImage || "",
+    dropDate: doc.dropDate ? new Date(doc.dropDate).toISOString() : undefined,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+  };
+}
+
+/**
  * Retrieves a single product strictly from MongoDB by handle.
  * No static fallback: returns null if not found in database.
  */
@@ -206,6 +240,7 @@ export async function getProductByHandle(handle: string): Promise<Product | null
     stock: doc.stock !== undefined ? doc.stock : 15,
     frontImage: doc.frontImage || "",
     backImage: doc.backImage || "",
+    dropDate: doc.dropDate ? new Date(doc.dropDate).toISOString() : undefined,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };

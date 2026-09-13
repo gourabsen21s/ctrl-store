@@ -104,15 +104,15 @@ export default function OrdersTab({ showNotification }: { showNotification: (msg
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2 border border-white/10 p-1 bg-[#141414]">
-          {["All", "processing", "dispatched", "delivered", "cancelled"].map((cat) => (
+        <div className="flex items-center gap-2 border border-white/10 p-1 bg-[#141414] overflow-x-auto">
+          {["All", "processing", "packed", "dispatched", "delivered", "cancelled"].map((cat) => (
             <button
               key={cat}
               onClick={() => {
                 setFulfillmentFilter(cat);
                 setCurrentPage(1);
               }}
-              className={`px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors ${
+              className={`px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors shrink-0 ${
                 fulfillmentFilter === cat ? "bg-white text-black font-bold" : "text-white/60 hover:text-white"
               }`}
             >
@@ -147,7 +147,7 @@ export default function OrdersTab({ showNotification }: { showNotification: (msg
             ) : (
               orders.map((order) => (
                 <tr key={order.orderId} className="hover:bg-white/5 transition-colors group">
-                  <td className="px-4 py-4 whitespace-nowrap">{order.orderId}</td>
+                  <td className="px-4 py-4 whitespace-nowrap font-bold text-white">{order.orderId}</td>
                   <td className="px-4 py-4">
                     <div className="font-bold text-white">{order.customer.name}</div>
                     <div className="text-white/50">{order.customer.email}</div>
@@ -163,8 +163,9 @@ export default function OrdersTab({ showNotification }: { showNotification: (msg
                   </td>
                   <td className="px-4 py-4">
                     <span className={`px-2 py-1 uppercase text-[10px] font-bold ${
-                      order.fulfillment.status === 'dispatched' ? 'bg-blue-500/20 text-blue-400' :
                       order.fulfillment.status === 'delivered' ? 'bg-emerald-500/20 text-emerald-400' :
+                      order.fulfillment.status === 'dispatched' ? 'bg-purple-500/20 text-purple-400' :
+                      order.fulfillment.status === 'packed' ? 'bg-blue-500/20 text-blue-400' :
                       order.fulfillment.status === 'cancelled' ? 'bg-red/20 text-red' :
                       'bg-amber-500/20 text-amber-400'
                     }`}>
@@ -172,7 +173,14 @@ export default function OrdersTab({ showNotification }: { showNotification: (msg
                     </span>
                   </td>
                   <td className="px-4 py-4 text-white/50">{new Date(order.createdAt).toLocaleDateString()}</td>
-                  <td className="px-4 py-4 text-right">
+                  <td className="px-4 py-4 text-right whitespace-nowrap">
+                    <Link
+                      href={`/order/${order.orderId}`}
+                      target="_blank"
+                      className="border border-white/20 px-2.5 py-1.5 uppercase text-[10px] text-white/70 hover:text-white hover:border-white transition-colors mr-2 inline-block"
+                    >
+                      Track ↗
+                    </Link>
                     <button
                       onClick={() => openOrder(order)}
                       className="border border-white/20 px-3 py-1.5 uppercase text-[10px] hover:bg-white hover:text-black transition-colors"
@@ -262,7 +270,17 @@ export default function OrdersTab({ showNotification }: { showNotification: (msg
             {/* Right side: Actions */}
             <div className="p-6 md:w-1/2 flex flex-col font-mono text-xs">
               <div className="flex justify-between items-start mb-6">
-                <h3 className="text-base uppercase tracking-widest text-white font-bold">Fulfillment</h3>
+                <div>
+                  <h3 className="text-base uppercase tracking-widest text-white font-bold">Fulfillment</h3>
+                  <a
+                    href={`/order/${selectedOrder.orderId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-emerald-400 hover:underline mt-1 inline-block"
+                  >
+                    View Live Tracking Page ↗
+                  </a>
+                </div>
                 <button onClick={() => setIsModalOpen(false)} className="text-white/50 hover:text-white uppercase tracking-wider">Close ✕</button>
               </div>
 
@@ -275,8 +293,9 @@ export default function OrdersTab({ showNotification }: { showNotification: (msg
                       onChange={(e) => setDispatchStatus(e.target.value)}
                       className="w-full border border-white/20 bg-black px-3 py-2 text-white focus:border-white focus:outline-none"
                     >
-                      <option value="processing">Processing</option>
-                      <option value="dispatched">Dispatched</option>
+                      <option value="processing">Processing (Order Confirmed)</option>
+                      <option value="packed">Packed (Quality Checked & Ready)</option>
+                      <option value="dispatched">Dispatched (In Transit)</option>
                       <option value="delivered">Delivered</option>
                       <option value="cancelled">Cancelled</option>
                     </select>

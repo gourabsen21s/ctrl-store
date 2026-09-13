@@ -40,6 +40,10 @@ export async function PUT(
       order.fulfillment.trackingUrl = body.trackingUrl;
     }
 
+    if (body.status === "packed" && !order.fulfillment.packedAt) {
+      order.fulfillment.packedAt = new Date();
+    }
+
     if (body.status === "dispatched" && !order.fulfillment.dispatchedAt) {
       order.fulfillment.dispatchedAt = new Date();
       
@@ -49,6 +53,10 @@ export async function PUT(
       } catch (e) {
         console.error("Failed to send dispatch email", e);
       }
+    }
+
+    if (body.status === "delivered" && !order.fulfillment.deliveredAt) {
+      order.fulfillment.deliveredAt = new Date();
     }
 
     await order.save();

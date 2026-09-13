@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Archivo } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 import ThemeProvider, { themeScript } from "@/components/providers/ThemeProvider";
@@ -60,12 +61,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${archivo.variable} antialiased`}
     >
-      <head suppressHydrationWarning>
-        {/* Before first paint, so the stored theme never flashes. */}
-        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: loaderScript }} />
-      </head>
+      <head suppressHydrationWarning />
       <body className="bg-cream text-black selection:bg-red selection:text-cream dark:bg-black dark:text-cream red:bg-cream red:text-red red:selection:bg-black">
+        {/* Before first paint, so the stored theme and loader never flash. */}
+        <Script
+          id="theme-script"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
+        <Script
+          id="loader-script"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: loaderScript }}
+        />
         <ThemeProvider>
           <BagProvider>
             <WishlistProvider>

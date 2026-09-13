@@ -138,17 +138,21 @@ export default function ProductCard({ product }: { product: Product }) {
           </svg>
         </button>
 
-        {/* Stock status badge */}
-        {product.stock === 0 && (
+        {/* Drop & Stock status badges */}
+        {product.dropDate && new Date(product.dropDate) > new Date() ? (
+          <div className="absolute top-3 right-3 z-10 bg-black/85 backdrop-blur-sm border border-amber-400 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-amber-300 font-bold flex items-center gap-1.5 shadow-[0_0_12px_rgba(245,158,11,0.3)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
+            Upcoming Drop
+          </div>
+        ) : product.stock === 0 ? (
           <div className="absolute top-3 right-3 z-10 bg-black/80 backdrop-blur-sm border border-red-500/60 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-red-400">
             Sold Out
           </div>
-        )}
-        {product.stock !== undefined && product.stock > 0 && product.stock <= 5 && (
+        ) : product.stock !== undefined && product.stock > 0 && product.stock <= 5 ? (
           <div className="absolute top-3 right-3 z-10 bg-black/80 backdrop-blur-sm border border-amber-500/60 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-amber-400 animate-pulse">
             Only {product.stock} left
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="mt-3 flex flex-col justify-between gap-2 text-lg leading-5 md:flex-row">
@@ -160,7 +164,9 @@ export default function ProductCard({ product }: { product: Product }) {
           <span className="h-2 w-2 rounded-full bg-current" />
           <span>{product.category}</span>
         </div>
-        {product.stock === 0 ? (
+        {product.dropDate && new Date(product.dropDate) > new Date() ? (
+          <span className="font-mono text-amber-400 tracking-wider font-semibold">⚡ Drop Scheduled</span>
+        ) : product.stock === 0 ? (
           <span className="font-mono text-red-500 tracking-wider font-semibold">Sold Out</span>
         ) : product.stock !== undefined && product.stock <= 5 ? (
           <span className="font-mono text-amber-500 tracking-wider font-semibold">⚡ Low Stock</span>

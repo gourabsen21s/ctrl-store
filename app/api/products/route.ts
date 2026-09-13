@@ -113,6 +113,7 @@ export async function POST(req: NextRequest) {
       stock: stock !== undefined ? Math.max(0, Number(stock)) : 15,
       frontImage: frontImage?.trim() || `/products/${cleanHandle}-front.jpg`,
       backImage: backImage?.trim() || `/products/${cleanHandle}-back.jpg`,
+      dropDate: body.dropDate ? new Date(body.dropDate) : undefined,
     });
 
     const formatted: Product = {
@@ -122,11 +123,12 @@ export async function POST(req: NextRequest) {
       category: newProduct.category,
       color: newProduct.color,
       sizes: newProduct.sizes,
-      aspect: newProduct.aspect,
+      aspect: newProduct.aspect as any,
       description: newProduct.description,
-      stock: newProduct.stock !== undefined ? newProduct.stock : 15,
+      stock: newProduct.stock,
       frontImage: newProduct.frontImage,
       backImage: newProduct.backImage,
+      dropDate: newProduct.dropDate ? new Date(newProduct.dropDate).toISOString() : undefined,
       createdAt: newProduct.createdAt,
       updatedAt: newProduct.updatedAt,
     };
