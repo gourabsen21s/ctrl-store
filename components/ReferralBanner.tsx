@@ -58,12 +58,14 @@ export default async function ReferralBanner() {
             <div className="mt-10 flex flex-wrap gap-4">
               <Link
                 href="/register"
-                className="inline-block bg-current px-8 py-4 text-sm font-[900] uppercase tracking-widest text-white dark:text-black transition-transform hover:scale-[1.02] active:scale-95"
+                data-cursor
+                className="inline-block bg-black text-cream dark:bg-cream dark:text-black red:bg-red red:text-cream px-8 py-4 text-sm font-[900] uppercase tracking-widest transition-transform hover:scale-[1.02] active:scale-95 shadow-md"
               >
                 Create Account →
               </Link>
               <Link
                 href="/account"
+                data-cursor
                 className="inline-block border border-current/30 px-8 py-4 text-sm font-[900] uppercase tracking-widest transition-colors hover:bg-current/10"
               >
                 My Wallet
