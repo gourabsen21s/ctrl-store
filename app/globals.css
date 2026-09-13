@@ -83,7 +83,7 @@ html.lenis body {
   scroll-behavior: auto !important;
 }
 .lenis.lenis-stopped {
-  overflow: hidden;
+  overflow: clip;
 }
 
 /* The loader plate is server-rendered so it covers the very first paint.
