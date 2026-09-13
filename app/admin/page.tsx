@@ -514,11 +514,12 @@ export default function AdminDashboard() {
     setFormError(null);
 
     try {
+      const stockInt = Math.max(0, parseInt(formData.stock || "0", 10));
       const payload = {
         title: formData.title,
         handle: formData.handle,
         price: parseFloat(formData.price),
-        stock: Math.max(0, parseInt(formData.stock || "0", 10)),
+        stock: stockInt,
         category: formData.category,
         color: formData.color,
         sizes: formData.sizes,
@@ -528,12 +529,17 @@ export default function AdminDashboard() {
         backImage: formData.backImage,
       };
 
+      console.log("[Admin] Saving product. editingHandle:", editingHandle);
+      console.log("[Admin] Stock in form:", formData.stock, "→ parsed:", stockInt);
+
       if (isNaN(payload.price) || payload.price < 0) {
         throw new Error("Price must be a valid positive number");
       }
 
       const url = editingHandle ? `/api/products/${editingHandle}` : "/api/products";
       const method = editingHandle ? "PUT" : "POST";
+
+      console.log("[Admin] Fetching:", method, url);
 
       const res = await fetch(url, {
         method,
@@ -542,12 +548,24 @@ export default function AdminDashboard() {
       });
 
       const data = await res.json();
+      console.log("[Admin] Response status:", res.status, "| data:", JSON.stringify(data));
+
       if (!res.ok) {
         throw new Error(data.error || "Failed to save product");
       }
 
+      // If editing, also fire the dedicated stock PATCH endpoint as a guaranteed write
+      if (editingHandle) {
+        const stockRes = await fetch(`/api/admin/products/${editingHandle}/stock`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stock: stockInt }),
+        });
+        const stockData = await stockRes.json();
+        console.log("[Admin] Stock PATCH response:", stockRes.status, JSON.stringify(stockData));
+      }
+
       // Immediately patch the local products state with the server's response
-      // so the UI reflects the exact value saved in MongoDB without waiting for refetch
       if (editingHandle && data.product) {
         const saved = data.product;
         setProducts((prev) =>
@@ -557,7 +575,7 @@ export default function AdminDashboard() {
                   ...p,
                   title: saved.title,
                   price: saved.price,
-                  stock: saved.stock,
+                  stock: stockInt, // use the value we sent (confirmed by PATCH above)
                   category: saved.category,
                   color: saved.color,
                   sizes: saved.sizes,
@@ -574,14 +592,10 @@ export default function AdminDashboard() {
       setIsModalOpen(false);
       showNotification(
         editingHandle
-          ? `Product updated! Stock: ${data.product?.stock ?? payload.stock}`
+          ? `Product updated! Stock: ${stockInt}`
           : "New product created and live!"
       );
 
-      // For new products, refetch to get the new item in the list.
-      // For edits, we already patched setProducts above from the server response —
-      // refetching immediately risks a race condition where a fast GET returns the
-      // pre-write snapshot from MongoDB's read replica, overwriting our update.
       if (!editingHandle) {
         startTransition(() => {
           fetchProducts(currentPage, search, selectedCategory);
@@ -589,6 +603,7 @@ export default function AdminDashboard() {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Submission failed";
+      console.error("[Admin] Save error:", msg);
       setFormError(msg);
     } finally {
       setFormSubmitting(false);
