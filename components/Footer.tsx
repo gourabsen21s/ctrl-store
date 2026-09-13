@@ -39,10 +39,11 @@ export default async function Footer() {
       <div className="grid grid-cols-16 gap-x-6 gap-y-20 font-bold md:gap-6">
         <div className="order-last col-span-16 md:order-first md:col-span-4">
           <p>{BRAND}</p>
-          <p>All rights reserved © 2026</p>
+          <p className="text-xs opacity-60">By EmulsionStack</p>
+          <p className="text-xs opacity-40 mt-1">All rights reserved © 2026</p>
         </div>
         <div className="col-span-8 md:col-span-4">
-          <p className="opacity-80 leading-relaxed">{storeAddress}</p>
+          <p className="opacity-80 leading-relaxed text-xs">{storeAddress}</p>
           {contactEmail && (
             <a
               href={`mailto:${contactEmail}`}
@@ -53,20 +54,43 @@ export default async function Footer() {
           )}
         </div>
         <div className="col-span-8 md:col-span-3">
-          <Link href="/" data-cursor className="hover:underline underline-offset-4">
-            Privacy Policy
-          </Link>
+          <ul className="flex flex-col gap-1 text-xs">
+            <li className="font-mono uppercase opacity-40 mb-1">Legal</li>
+            <li>
+              <Link href="/privacy" data-cursor className="hover:underline underline-offset-4">
+                Privacy Policy
+              </Link>
+            </li>
+            <li>
+              <Link href="/terms" data-cursor className="hover:underline underline-offset-4">
+                Terms & Conditions
+              </Link>
+            </li>
+            <li>
+              <Link href="/refunds" data-cursor className="hover:underline underline-offset-4">
+                Refund Policy
+              </Link>
+            </li>
+          </ul>
         </div>
         <div className="order-first col-span-16 flex justify-between gap-6 md:order-last md:col-span-5">
-          <ul className="flex flex-col gap-1">
-            <li className="font-mono text-xs uppercase opacity-40 mb-1">Studio</li>
-            {["Work", "Services", "About", "Careers"].map((l) => (
-              <li key={l}>
-                <Link href="/" data-cursor className="hover:underline underline-offset-4">
-                  {l}
-                </Link>
-              </li>
-            ))}
+          <ul className="flex flex-col gap-1 text-xs">
+            <li className="font-mono uppercase opacity-40 mb-1">Studio</li>
+            <li>
+              <Link href="/about" data-cursor className="hover:underline underline-offset-4 font-semibold">
+                About Us
+              </Link>
+            </li>
+            <li>
+              <Link href="/" data-cursor className="hover:underline underline-offset-4">
+                Collection
+              </Link>
+            </li>
+            <li>
+              <Link href="/wishlist" data-cursor className="hover:underline underline-offset-4">
+                Wishlist
+              </Link>
+            </li>
           </ul>
 
           <ul className="flex flex-col gap-1">
