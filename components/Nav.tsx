@@ -15,7 +15,7 @@ import { MenuPanel, MenuToggle } from "@/components/Menu";
  */
 export default function Nav() {
   const pathname = usePathname();
-  const { count } = useBag();
+  const { count, openDrawer: openBag } = useBag();
   const { count: wishlistCount, openDrawer: openWishlist } = useWishlist();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -91,9 +91,14 @@ export default function Nav() {
                 </button>
               </li>
               <li>
-                <Link href="/bag" data-cursor>
+                <button
+                  type="button"
+                  data-cursor
+                  onClick={openBag}
+                  className="transition-opacity hover:opacity-70"
+                >
                   Bag ({count})
-                </Link>
+                </button>
               </li>
             </ul>
 

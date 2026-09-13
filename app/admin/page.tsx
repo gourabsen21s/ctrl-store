@@ -10,6 +10,12 @@ import AnalyticsTab from "./AnalyticsTab";
 import PromosTab from "./PromosTab";
 import WaitlistTab from "./WaitlistTab";
 import WalletsTab from "./WalletsTab";
+import {
+  type IGamificationSettings,
+  type IInvoiceSettings,
+  DEFAULT_GAMIFICATION_SETTINGS,
+  DEFAULT_INVOICE_SETTINGS,
+} from "@/lib/settings-types";
 
 interface AdminReview {
   _id: string;
@@ -106,6 +112,8 @@ export default function AdminDashboard() {
   const [socialLinks, setSocialLinks] = useState<{ id: string; platform: string; label: string; url: string; enabled: boolean }[]>([]);
   const [storeAddress, setStoreAddress] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [gamificationSettings, setGamificationSettings] = useState<IGamificationSettings>(DEFAULT_GAMIFICATION_SETTINGS);
+  const [invoiceSettings, setInvoiceSettings] = useState<IInvoiceSettings>(DEFAULT_INVOICE_SETTINGS);
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
 
@@ -245,7 +253,7 @@ export default function AdminDashboard() {
     showNotification("Exported subscribers CSV!");
   };
 
-  // 3. Fetch Settings (Social Media & Store Info)
+  // 3. Fetch Settings (Social Media, Gamification & Invoice)
   const fetchSettings = async () => {
     setSettingsLoading(true);
     try {
@@ -255,6 +263,18 @@ export default function AdminDashboard() {
         setSocialLinks(data.socialLinks || []);
         setStoreAddress(data.storeAddress || "");
         setContactEmail(data.contactEmail || "");
+        if (data.gamificationSettings) {
+          setGamificationSettings({
+            ...DEFAULT_GAMIFICATION_SETTINGS,
+            ...data.gamificationSettings,
+          });
+        }
+        if (data.invoiceSettings) {
+          setInvoiceSettings({
+            ...DEFAULT_INVOICE_SETTINGS,
+            ...data.invoiceSettings,
+          });
+        }
       }
     } catch (err) {
       console.error("Failed to load settings:", err);
@@ -274,13 +294,15 @@ export default function AdminDashboard() {
           socialLinks,
           storeAddress,
           contactEmail,
+          gamificationSettings,
+          invoiceSettings,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save settings");
 
-      showNotification("Social & Store settings saved to MongoDB Atlas!");
+      showNotification("All Store, Gamification & Invoice settings saved to MongoDB!");
       router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save settings";
@@ -675,7 +697,7 @@ export default function AdminDashboard() {
               : activeTab === "subscribers"
               ? "VIP Drop Waitlist"
               : activeTab === "settings"
-              ? "Social & Store Settings"
+              ? "Store Settings (Invoices, Gamification & Store)"
               : "Customer Reviews"}
           </h1>
           <p className="mt-1 text-xs font-mono text-white/50">
@@ -693,7 +715,7 @@ export default function AdminDashboard() {
               : activeTab === "subscribers"
               ? `${subscribers.length} VIP Subscribers`
               : activeTab === "settings"
-              ? `${socialLinks.filter((s) => s.enabled).length} Active Channels`
+              ? "Tax Invoices, GSTIN, Cart Gamification Engine & Store Info"
               : `${reviews.length} Verified Reviews`}
           </p>
         </div>
@@ -717,10 +739,11 @@ export default function AdminDashboard() {
           )}
           {activeTab === "settings" && (
             <button
-              onClick={addCustomSocial}
-              className="flex items-center gap-2 bg-white px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:bg-neutral-200 active:scale-95"
+              onClick={handleSaveSettings}
+              disabled={settingsSaving}
+              className="flex items-center gap-2 bg-white px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:bg-neutral-200 active:scale-95 disabled:opacity-50"
             >
-              <span>+ Add Channel</span>
+              <span>{settingsSaving ? "Saving..." : "💾 Save All Settings"}</span>
             </button>
           )}
           {activeTab === "reviews" && (
@@ -744,7 +767,7 @@ export default function AdminDashboard() {
           )}
           <button
             onClick={handleLogout}
-            className="border border-white/20 px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-white/70 transition-colors hover:border-white hover:text-white"
+            className="border border-white/20 px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-white/70 hover:border-white hover:text-white transition-colors"
           >
             Logout
           </button>
@@ -764,16 +787,6 @@ export default function AdminDashboard() {
           Analytics
         </button>
         <button
-          onClick={() => setActiveTab("promos")}
-          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === "promos"
-              ? "border-white text-white font-bold"
-              : "border-transparent text-white/50 hover:text-white"
-          }`}
-        >
-          Promos
-        </button>
-        <button
           onClick={() => setActiveTab("orders")}
           className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
             activeTab === "orders"
@@ -784,24 +797,18 @@ export default function AdminDashboard() {
           Orders
         </button>
         <button
-          onClick={() => setActiveTab("waitlist")}
-          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === "waitlist"
-              ? "border-white text-white font-bold"
-              : "border-transparent text-white/50 hover:text-white"
+          onClick={() => {
+            setActiveTab("settings");
+            fetchSettings();
+          }}
+          className={`px-4 py-2 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+            activeTab === "settings"
+              ? "border-emerald-400 text-white font-bold bg-white/5"
+              : "border-transparent text-white/70 hover:text-white"
           }`}
         >
-          Waitlists
-        </button>
-        <button
-          onClick={() => setActiveTab("wallets")}
-          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === "wallets"
-              ? "border-white text-white font-bold"
-              : "border-transparent text-white/50 hover:text-white"
-          }`}
-        >
-          Wallets
+          <span className="text-emerald-400">⚙️</span>
+          <span>Settings (Invoices &amp; Gamification)</span>
         </button>
         <button
           onClick={() => setActiveTab("products")}
@@ -814,6 +821,36 @@ export default function AdminDashboard() {
           Products ({total})
         </button>
         <button
+          onClick={() => setActiveTab("promos")}
+          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === "promos"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          Promos
+        </button>
+        <button
+          onClick={() => setActiveTab("wallets")}
+          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === "wallets"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          Wallets
+        </button>
+        <button
+          onClick={() => setActiveTab("waitlist")}
+          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === "waitlist"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          Waitlists
+        </button>
+        <button
           onClick={() => setActiveTab("subscribers")}
           className={`px-4 py-2 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
             activeTab === "subscribers"
@@ -823,22 +860,6 @@ export default function AdminDashboard() {
         >
           <span>VIP Drop Waitlist ({subscribers.length})</span>
           {subscribers.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
-        </button>
-        <button
-          onClick={() => {
-            setActiveTab("settings");
-            if (socialLinks.length === 0) fetchSettings();
-          }}
-          className={`px-4 py-2 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
-            activeTab === "settings"
-              ? "border-white text-white font-bold"
-              : "border-transparent text-white/50 hover:text-white"
-          }`}
-        >
-          <span>Social & Store Info</span>
-          <span className="text-[10px] text-white/40 font-mono">
-            ({socialLinks.filter((s) => s.enabled).length} active)
-          </span>
         </button>
         <button
           onClick={() => {
@@ -1158,37 +1179,528 @@ export default function AdminDashboard() {
           </div>
         </div>
       ) : activeTab === "settings" ? (
-        /* SOCIAL MEDIA & STORE CONFIGURATION VIEW */
+        /* STORE SETTINGS & BUSINESS CONTROLS VIEW */
         <div className="space-y-8 max-w-4xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
             <div>
-              <h2 className="text-base font-bold text-white tracking-wide">
-                Social Media & Storefront Configuration
-              </h2>
+              <div className="flex items-center gap-2">
+                <span className="text-emerald-400 font-mono text-base">⚙️</span>
+                <h2 className="text-base font-bold text-white tracking-wide uppercase">
+                  Store Settings &amp; Business Controls
+                </h2>
+                <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase border border-emerald-500/40 text-emerald-400 bg-emerald-500/10">
+                  MongoDB Atlas
+                </span>
+              </div>
               <p className="text-xs font-mono text-white/50 mt-1">
-                Toggle active social channels, set official handles/URLs, and configure footer metadata.
+                Configure Cart Gamification milestones, official B2B/B2C Tax Invoices &amp; GSTIN, Store contact, and social channels.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={addCustomSocial}
-              className="px-3.5 py-2 border border-white/20 text-xs font-mono uppercase tracking-wider text-white hover:border-white hover:bg-white/5 transition-colors self-start sm:self-auto"
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSaveSettings}
+                disabled={settingsSaving}
+                className="px-5 py-2.5 bg-white text-black font-bold text-xs font-mono uppercase tracking-wider hover:bg-neutral-200 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+              >
+                {settingsSaving ? (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-black animate-ping" />
+                    Saving...
+                  </>
+                ) : (
+                  "💾 Save All Settings"
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Section Anchor Navigation */}
+          <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] pb-3 border-b border-white/10">
+            <span className="text-white/40 uppercase tracking-wider text-[10px] mr-1">Jump to:</span>
+            <a
+              href="#gamification-section"
+              className="px-3 py-1.5 border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
             >
-              + Add Channel
-            </button>
+              ⚡ Cart Gamification
+            </a>
+            <a
+              href="#invoice-section"
+              className="px-3 py-1.5 border border-blue-500/40 text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
+            >
+              📄 Tax Invoice &amp; GST
+            </a>
+            <a
+              href="#store-section"
+              className="px-3 py-1.5 border border-white/20 text-white/70 hover:text-white bg-white/5 transition-colors"
+            >
+              📍 HQ Address &amp; Email
+            </a>
+            <a
+              href="#social-section"
+              className="px-3 py-1.5 border border-white/20 text-white/70 hover:text-white bg-white/5 transition-colors"
+            >
+              🌐 Social Media Channels
+            </a>
           </div>
 
           {settingsLoading ? (
             <div className="py-12 text-center text-white/40 font-mono text-xs">
-              Loading social & store configuration...
+              Loading store, gamification &amp; invoice settings from MongoDB...
             </div>
           ) : (
             <form onSubmit={handleSaveSettings} className="space-y-8">
-              {/* Social Channels List */}
-              <div className="space-y-4">
-                <h3 className="text-xs font-mono uppercase tracking-wider text-white/60">
-                  Connected Social Platforms
-                </h3>
+              {/* ⚡ SECTION 1: Cart Gamification & Free Gift Engine */}
+              <div id="gamification-section" className="space-y-4 pt-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-emerald-400 font-mono text-base">⚡</span>
+                      <h3 className="text-sm font-mono uppercase tracking-wider text-white font-bold">
+                        Cart Gamification &amp; Free Gift Engine
+                      </h3>
+                      <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase border border-emerald-500/40 text-emerald-400 bg-emerald-500/10">
+                        AOV Booster
+                      </span>
+                    </div>
+                    <p className="text-[11px] font-mono text-white/50 mt-0.5">
+                      Configure dynamic spending milestones for Free Express Shipping and automated Free Gift reward in the Bag Drawer.
+                    </p>
+                  </div>
+                  <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={gamificationSettings.enabled}
+                      onChange={(e) =>
+                        setGamificationSettings((prev) => ({ ...prev, enabled: e.target.checked }))
+                      }
+                      className="h-4 w-4 rounded-none border-white/30 bg-black text-emerald-500 focus:ring-0"
+                    />
+                    <span className="text-xs font-mono uppercase tracking-wider text-white">
+                      {gamificationSettings.enabled ? (
+                        <span className="text-emerald-400 font-bold">Gamification Active</span>
+                      ) : (
+                        <span className="text-white/40">Disabled</span>
+                      )}
+                    </span>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 border border-white/10 bg-white/[0.02]">
+                    <label className="block text-xs font-mono uppercase text-emerald-400 mb-1 font-bold">
+                      🚚 Free Shipping Threshold (₹)
+                    </label>
+                    <p className="text-[10px] font-mono text-white/40 mb-2">
+                      Cart subtotal required to unlock 100% Free Express Delivery.
+                    </p>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-xs font-mono text-white/40">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={gamificationSettings.freeShippingThreshold}
+                        onChange={(e) =>
+                          setGamificationSettings((prev) => ({
+                            ...prev,
+                            freeShippingThreshold: Number(e.target.value) || 0,
+                          }))
+                        }
+                        className="w-full border border-white/20 bg-black/60 pl-8 pr-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 border border-white/10 bg-white/[0.02]">
+                    <label className="block text-xs font-mono uppercase text-amber-400 mb-1 font-bold">
+                      🎁 Free Gift Threshold (₹)
+                    </label>
+                    <p className="text-[10px] font-mono text-white/40 mb-2">
+                      Cart subtotal required to automatically add the free gift item.
+                    </p>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-xs font-mono text-white/40">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={gamificationSettings.freeGiftThreshold}
+                        onChange={(e) =>
+                          setGamificationSettings((prev) => ({
+                            ...prev,
+                            freeGiftThreshold: Number(e.target.value) || 0,
+                          }))
+                        }
+                        className="w-full border border-white/20 bg-black/60 pl-8 pr-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Free Gift Item Title
+                    </label>
+                    <input
+                      type="text"
+                      value={gamificationSettings.freeGiftTitle}
+                      onChange={(e) =>
+                        setGamificationSettings((prev) => ({
+                          ...prev,
+                          freeGiftTitle: e.target.value,
+                        }))
+                      }
+                      placeholder="Webbing Keyfob (Exclusive Gift)"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Gift Item Handle / SKU
+                    </label>
+                    <input
+                      type="text"
+                      value={gamificationSettings.freeGiftHandle}
+                      onChange={(e) =>
+                        setGamificationSettings((prev) => ({
+                          ...prev,
+                          freeGiftHandle: e.target.value,
+                        }))
+                      }
+                      placeholder="webbing-keyfob-gift"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-3">
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Free Gift Image URL
+                    </label>
+                    <input
+                      type="url"
+                      value={gamificationSettings.freeGiftImage}
+                      onChange={(e) =>
+                        setGamificationSettings((prev) => ({
+                          ...prev,
+                          freeGiftImage: e.target.value,
+                        }))
+                      }
+                      placeholder="https://res.cloudinary.com/.../gift.jpg"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Gamification Preview Banner */}
+                <div className="border border-white/10 bg-black/80 p-4">
+                  <div className="flex items-center justify-between text-[10px] font-mono uppercase text-white/40 mb-2">
+                    <span>Live Bag Gamification Preview</span>
+                    <span>Status: {gamificationSettings.enabled ? "ACTIVE IN DRAWER" : "DISABLED"}</span>
+                  </div>
+                  <div className="p-3 border border-emerald-500/20 bg-emerald-950/10 space-y-2">
+                    <div className="flex justify-between items-center text-xs font-mono">
+                      <span className="text-white font-bold">
+                        Add ₹999 to unlock FREE Webbing Keyfob 🎁
+                      </span>
+                      <span className="text-emerald-400 font-mono">75%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-white/10 overflow-hidden relative">
+                      <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-400 w-3/4 transition-all" />
+                    </div>
+                    <div className="flex justify-between text-[10px] font-mono text-white/50 pt-1 border-t border-white/5">
+                      <span>🚚 Free Ship at ₹{gamificationSettings.freeShippingThreshold.toLocaleString("en-IN")}</span>
+                      <span>🎁 Free Gift: {gamificationSettings.freeGiftTitle} (₹{gamificationSettings.freeGiftThreshold.toLocaleString("en-IN")})</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 📄 SECTION 2: Official Tax Invoice & GST Compliance */}
+              <div id="invoice-section" className="border-t border-white/10 pt-6 space-y-4">
+                <div className="border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-400 font-mono text-base">📄</span>
+                    <h3 className="text-sm font-mono uppercase tracking-wider text-white font-bold">
+                      Official Tax Invoice &amp; GST Compliance
+                    </h3>
+                    <span className="px-1.5 py-0.5 text-[9px] font-mono uppercase border border-blue-500/40 text-blue-400 bg-blue-500/10">
+                      B2C / B2B Legal
+                    </span>
+                  </div>
+                  <p className="text-[11px] font-mono text-white/50 mt-0.5">
+                    Customize the legally compliant registered entity details, GSTIN, tax rate %, and declarations stamped onto printable customer PDF invoices.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Registered Legal Entity Name
+                    </label>
+                    <input
+                      type="text"
+                      value={invoiceSettings.companyName}
+                      onChange={(e) =>
+                        setInvoiceSettings((prev) => ({
+                          ...prev,
+                          companyName: e.target.value,
+                        }))
+                      }
+                      placeholder="CTRL + STYLE® Retail Pvt. Ltd."
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Company Tagline / Subtitle
+                    </label>
+                    <input
+                      type="text"
+                      value={invoiceSettings.companyTagline}
+                      onChange={(e) =>
+                        setInvoiceSettings((prev) => ({
+                          ...prev,
+                          companyTagline: e.target.value,
+                        }))
+                      }
+                      placeholder="Luxury Apparel & Tactical Goods"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      15-Digit GSTIN
+                    </label>
+                    <input
+                      type="text"
+                      value={invoiceSettings.gstin}
+                      onChange={(e) =>
+                        setInvoiceSettings((prev) => ({
+                          ...prev,
+                          gstin: e.target.value.toUpperCase(),
+                        }))
+                      }
+                      placeholder="29AABCU9603R1ZM"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none tracking-widest font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      State &amp; State Code
+                    </label>
+                    <input
+                      type="text"
+                      value={invoiceSettings.state}
+                      onChange={(e) =>
+                        setInvoiceSettings((prev) => ({
+                          ...prev,
+                          state: e.target.value,
+                        }))
+                      }
+                      placeholder="Karnataka (29)"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Invoice Prefix Code
+                    </label>
+                    <input
+                      type="text"
+                      value={invoiceSettings.invoicePrefix}
+                      onChange={(e) =>
+                        setInvoiceSettings((prev) => ({
+                          ...prev,
+                          invoicePrefix: e.target.value.toUpperCase(),
+                        }))
+                      }
+                      placeholder="INV-"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Standard GST Tax Rate (%)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.5"
+                        value={invoiceSettings.gstRate}
+                        onChange={(e) =>
+                          setInvoiceSettings((prev) => ({
+                            ...prev,
+                            gstRate: Number(e.target.value) || 0,
+                          }))
+                        }
+                        className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                      />
+                      <span className="absolute right-3 top-2 text-xs font-mono text-white/40">%</span>
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Registered Company HQ Address
+                    </label>
+                    <input
+                      type="text"
+                      value={invoiceSettings.companyAddress}
+                      onChange={(e) =>
+                        setInvoiceSettings((prev) => ({
+                          ...prev,
+                          companyAddress: e.target.value,
+                        }))
+                      }
+                      placeholder="108 Brigade Road, Indiranagar, Bengaluru, KA 560038"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Billing Contact Email
+                    </label>
+                    <input
+                      type="email"
+                      value={invoiceSettings.supportEmail}
+                      onChange={(e) =>
+                        setInvoiceSettings((prev) => ({
+                          ...prev,
+                          supportEmail: e.target.value,
+                        }))
+                      }
+                      placeholder="billing@ctrlstyle.com"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Billing Support Phone
+                    </label>
+                    <input
+                      type="text"
+                      value={invoiceSettings.supportPhone}
+                      onChange={(e) =>
+                        setInvoiceSettings((prev) => ({
+                          ...prev,
+                          supportPhone: e.target.value,
+                        }))
+                      }
+                      placeholder="+91 98765 43210"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Invoice Legal Terms / Footer Note
+                    </label>
+                    <input
+                      type="text"
+                      value={invoiceSettings.footerNotes}
+                      onChange={(e) =>
+                        setInvoiceSettings((prev) => ({
+                          ...prev,
+                          footerNotes: e.target.value,
+                        }))
+                      }
+                      placeholder="This is a computer-generated tax invoice. No signature required."
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Live Invoice Badge Preview */}
+                <div className="border border-white/10 bg-black/80 p-4">
+                  <div className="flex items-center justify-between text-[10px] font-mono uppercase text-white/40 mb-2">
+                    <span>Tax Invoice Header Preview</span>
+                    <span className="text-emerald-400">GSTIN: {invoiceSettings.gstin || "NOT SET"}</span>
+                  </div>
+                  <div className="p-3 border border-white/15 bg-white/[0.02] text-xs font-mono flex flex-col sm:flex-row justify-between gap-2">
+                    <div>
+                      <p className="font-bold text-white tracking-wider">{invoiceSettings.companyName}</p>
+                      <p className="text-white/50 text-[11px]">{invoiceSettings.companyAddress}</p>
+                      <p className="text-white/40 text-[10px]">State: {invoiceSettings.state} • Email: {invoiceSettings.supportEmail}</p>
+                    </div>
+                    <div className="sm:text-right text-[11px] text-white/70">
+                      <p>Format: <span className="text-white font-bold">{invoiceSettings.invoicePrefix}ORD#1024</span></p>
+                      <p>Rate: <span className="text-emerald-400 font-bold">{invoiceSettings.gstRate}% Inclusive</span></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 📍 SECTION 3: Storefront Contact & HQ Address */}
+              <div id="store-section" className="border-t border-white/10 pt-6 space-y-4">
+                <div className="border-b border-white/10 pb-3">
+                  <h3 className="text-sm font-mono uppercase tracking-wider text-white font-bold">
+                    Storefront Contact &amp; HQ Address
+                  </h3>
+                  <p className="text-[11px] font-mono text-white/50 mt-0.5">
+                    Customer support email and physical studio address displayed in the storefront footer.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Customer Support Email
+                    </label>
+                    <input
+                      type="email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="concierge@ctrlstyle.com"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Store / Studio Address
+                    </label>
+                    <input
+                      type="text"
+                      value={storeAddress}
+                      onChange={(e) => setStoreAddress(e.target.value)}
+                      placeholder="108 Brigade Road, Bengaluru"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 🌐 SECTION 4: Connected Social Platforms */}
+              <div id="social-section" className="border-t border-white/10 pt-6 space-y-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div>
+                    <h3 className="text-sm font-mono uppercase tracking-wider text-white font-bold">
+                      Connected Social Platforms
+                    </h3>
+                    <p className="text-[11px] font-mono text-white/50 mt-0.5">
+                      Toggle active channels and manage outbound links in the footer.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addCustomSocial}
+                    className="px-3 py-1.5 border border-white/20 text-xs font-mono uppercase tracking-wider text-white hover:border-white hover:bg-white/5 transition-colors"
+                  >
+                    + Add Channel
+                  </button>
+                </div>
 
                 <div className="space-y-3">
                   {socialLinks.map((social) => (
@@ -1261,41 +1773,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Store Information */}
-              <div className="border-t border-white/10 pt-6 space-y-4">
-                <h3 className="text-xs font-mono uppercase tracking-wider text-white/60">
-                  Storefront Contact & HQ Address
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
-                      Customer Support Email
-                    </label>
-                    <input
-                      type="email"
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                      placeholder="concierge@ctrlstyle.com"
-                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
-                      Store / Studio Address
-                    </label>
-                    <input
-                      type="text"
-                      value={storeAddress}
-                      onChange={(e) => setStoreAddress(e.target.value)}
-                      placeholder="108 Brigade Road, Bengaluru"
-                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
               {/* Live Footer Preview */}
               <div className="border border-white/10 bg-black/60 p-5 rounded-none">
                 <p className="text-[10px] font-mono uppercase tracking-wider text-white/40 mb-3">
@@ -1323,7 +1800,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Save Button */}
+              {/* Bottom Save Button */}
               <div className="flex justify-end pt-4">
                 <button
                   type="submit"
@@ -1333,7 +1810,7 @@ export default function AdminDashboard() {
                   {settingsSaving ? (
                     <>
                       <span className="h-2 w-2 rounded-full bg-black animate-ping" />
-                      Saving Settings...
+                      Saving Settings to MongoDB...
                     </>
                   ) : (
                     "Save Settings to MongoDB ↗"

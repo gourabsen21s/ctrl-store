@@ -78,6 +78,27 @@ export async function triggerReferralReward(refereeId: string, orderId: string) 
     }
 
     await session.commitTransaction();
+
+    // Asynchronously send referral reward email notification
+    try {
+      const { CustomerModel } = await import("@/models/Customer");
+      const { sendReferralRewardEmail } = await import("@/lib/email");
+      const [referrer, referee] = await Promise.all([
+        CustomerModel.findById(referral.referrerId).lean(),
+        CustomerModel.findById(referral.refereeId).lean(),
+      ]);
+      if (referrer && referee) {
+        sendReferralRewardEmail(
+          referrer.email,
+          referrer.name,
+          referee.name,
+          settings.referrerReward
+        ).catch(console.error);
+      }
+    } catch (mailErr) {
+      console.error("Failed to send referral reward email notification", mailErr);
+    }
+
     return true;
   } catch (error) {
     await session.abortTransaction();

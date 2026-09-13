@@ -8,6 +8,7 @@ import { loaderScript } from "@/components/Preloader";
 import BagProvider from "@/components/providers/BagProvider";
 import WishlistProvider from "@/components/providers/WishlistProvider";
 import WishlistDrawer from "@/components/WishlistDrawer";
+import BagDrawer from "@/components/BagDrawer";
 import SmoothScroll from "@/components/providers/SmoothScroll";
 import Nav from "@/components/Nav";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
@@ -82,6 +83,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <ThemeSwitcher />
               {children}
               <WishlistDrawer />
+              <BagDrawer />
               <Cursor />
               <TransitionLayer />
             </WishlistProvider>

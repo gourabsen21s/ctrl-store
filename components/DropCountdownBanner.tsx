@@ -112,7 +112,7 @@ export default function DropCountdownBanner({ product }: DropCountdownBannerProp
                 <span>•</span>
                 <span className="font-bold text-white">{money(product.price)}</span>
                 <span>•</span>
-                <span className="text-amber-400/90">
+                <span suppressHydrationWarning className="text-amber-400/90">
                   {isLive ? "Unlocked" : `Launch: ${new Date(product.dropDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                 </span>
               </div>

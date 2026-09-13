@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useBag } from "@/components/providers/BagProvider";
+import CartGamificationBar from "@/components/CartGamificationBar";
+import RecentlyViewed from "@/components/RecentlyViewed";
 import { money } from "@/lib/products";
 
 export default function BagView() {
@@ -13,6 +15,11 @@ export default function BagView() {
     <div className="mt-28 px-4 lg:px-6">
       <h1 className="text-[19vw] leading-[0.78] font-[900] tracking-tighter">Your Bag</h1>
       <div className="mt-4 mb-8 h-[5px] w-full bg-current" />
+
+      {/* Cart Gamification Progress Bar */}
+      <div className="mb-8 max-w-xl">
+        <CartGamificationBar />
+      </div>
 
       {empty ? (
         <p className="text-[8vw] leading-[0.95] font-[900] tracking-tighter">
@@ -76,10 +83,13 @@ export default function BagView() {
         </>
       )}
 
+      {/* Recently Viewed Carousel */}
+      <RecentlyViewed className="mt-8 mb-16" />
+
       <Link
         href="/"
         data-cursor
-        className="mt-16 mb-40 inline-block text-2xl underline underline-offset-8"
+        className="mt-8 mb-40 inline-block text-2xl underline underline-offset-8"
       >
         Continue shopping <span aria-hidden>↗</span>
       </Link>

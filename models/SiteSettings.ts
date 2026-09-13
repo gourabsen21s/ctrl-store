@@ -1,75 +1,39 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
+import {
+  type ISocialLink,
+  type IWalletSettings,
+  type IGamificationSettings,
+  type IInvoiceSettings,
+  DEFAULT_SOCIAL_LINKS,
+  DEFAULT_WALLET_SETTINGS,
+  DEFAULT_GAMIFICATION_SETTINGS,
+  DEFAULT_INVOICE_SETTINGS,
+} from "@/lib/settings-types";
 
-export interface ISocialLink {
-  id: string;
-  platform: string;
-  label: string;
-  url: string;
-  enabled: boolean;
-}
+export type {
+  ISocialLink,
+  IWalletSettings,
+  IGamificationSettings,
+  IInvoiceSettings,
+};
 
-export interface IWalletSettings {
-  referrerReward: number;
-  refereeReward: number;
-  signupBonus: number;
-  maxRedemptionPercentage: number;
-  rewardTrigger: "order_placed" | "order_delivered";
-}
+export {
+  DEFAULT_SOCIAL_LINKS,
+  DEFAULT_WALLET_SETTINGS,
+  DEFAULT_GAMIFICATION_SETTINGS,
+  DEFAULT_INVOICE_SETTINGS,
+};
 
 export interface ISiteSettings extends Document {
   socialLinks: ISocialLink[];
   storeAddress: string;
   contactEmail: string;
   walletSettings: IWalletSettings;
+  gamificationSettings: IGamificationSettings;
+  invoiceSettings: IInvoiceSettings;
   createdAt: Date;
   updatedAt: Date;
 }
-
-export const DEFAULT_SOCIAL_LINKS: ISocialLink[] = [
-  {
-    id: "instagram",
-    platform: "Instagram",
-    label: "Instagram",
-    url: "https://instagram.com/ctrlstyle",
-    enabled: true,
-  },
-  {
-    id: "twitter",
-    platform: "Twitter (X)",
-    label: "Twitter (X)",
-    url: "https://x.com/ctrlstyle",
-    enabled: true,
-  },
-  {
-    id: "whatsapp",
-    platform: "WhatsApp",
-    label: "WhatsApp",
-    url: "https://wa.me/919876543210",
-    enabled: true,
-  },
-  {
-    id: "linkedin",
-    platform: "LinkedIn",
-    label: "LinkedIn",
-    url: "https://linkedin.com/company/ctrlstyle",
-    enabled: true,
-  },
-  {
-    id: "youtube",
-    platform: "YouTube",
-    label: "YouTube",
-    url: "https://youtube.com/@ctrlstyle",
-    enabled: false,
-  },
-];
-
-export const DEFAULT_WALLET_SETTINGS: IWalletSettings = {
-  referrerReward: 50,
-  refereeReward: 25,
-  signupBonus: 0,
-  maxRedemptionPercentage: 30, // max 30% of order value
-  rewardTrigger: "order_placed",
-};
 
 const SocialLinkSchema = new Schema<ISocialLink>(
   {
@@ -93,6 +57,38 @@ const WalletSettingsSchema = new Schema<IWalletSettings>(
   { _id: false }
 );
 
+const GamificationSettingsSchema = new Schema<IGamificationSettings>(
+  {
+    enabled: { type: Boolean, default: true },
+    freeShippingThreshold: { type: Number, default: 1999 },
+    freeGiftThreshold: { type: Number, default: 3999 },
+    freeGiftTitle: { type: String, default: "Webbing Keyfob (Exclusive Gift)" },
+    freeGiftHandle: { type: String, default: "webbing-keyfob-gift" },
+    freeGiftImage: {
+      type: String,
+      default:
+        "https://res.cloudinary.com/gnjuglvy/image/upload/v1789289473/ctrl-store/products/webbing-keyfob-front.jpg",
+    },
+  },
+  { _id: false }
+);
+
+const InvoiceSettingsSchema = new Schema<IInvoiceSettings>(
+  {
+    companyName: { type: String, default: "CTRL + STYLE® Retail Pvt. Ltd." },
+    companyTagline: { type: String, default: "Luxury Apparel & Tactical Goods" },
+    companyAddress: { type: String, default: "108 Brigade Road, Indiranagar, Bengaluru, KA 560038" },
+    gstin: { type: String, default: "29AABCU9603R1ZM" },
+    state: { type: String, default: "Karnataka (29)" },
+    invoicePrefix: { type: String, default: "INV-" },
+    gstRate: { type: Number, default: 5 },
+    supportEmail: { type: String, default: "billing@ctrlstyle.com" },
+    supportPhone: { type: String, default: "+91 98765 43210" },
+    footerNotes: { type: String, default: "This is a computer-generated tax invoice. No signature required." },
+  },
+  { _id: false }
+);
+
 const SiteSettingsSchema = new Schema<ISiteSettings>(
   {
     socialLinks: {
@@ -111,9 +107,26 @@ const SiteSettingsSchema = new Schema<ISiteSettings>(
       type: WalletSettingsSchema,
       default: DEFAULT_WALLET_SETTINGS,
     },
+    gamificationSettings: {
+      type: GamificationSettingsSchema,
+      default: DEFAULT_GAMIFICATION_SETTINGS,
+    },
+    invoiceSettings: {
+      type: InvoiceSettingsSchema,
+      default: DEFAULT_INVOICE_SETTINGS,
+    },
   },
   { timestamps: true }
 );
+
+// Invalidate cached model if schema was updated
+if (
+  mongoose.models?.SiteSettings &&
+  (!mongoose.models.SiteSettings.schema.path("gamificationSettings") ||
+    !mongoose.models.SiteSettings.schema.path("invoiceSettings"))
+) {
+  delete (mongoose.models as Record<string, unknown>).SiteSettings;
+}
 
 export const SiteSettingsModel: Model<ISiteSettings> =
   (mongoose.models?.SiteSettings as Model<ISiteSettings>) ||

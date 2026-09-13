@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { money } from "@/lib/products";
 import Link from "next/link";
+import InvoiceModal from "@/components/InvoiceModal";
 
 export default function OrdersTab({ showNotification }: { showNotification: (msg: string, type?: "success"|"error") => void }) {
   const [orders, setOrders] = useState<any[]>([]);
@@ -15,6 +16,7 @@ export default function OrdersTab({ showNotification }: { showNotification: (msg
   
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [dispatchStatus, setDispatchStatus] = useState("");
   const [courierName, setCourierName] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
@@ -272,14 +274,24 @@ export default function OrdersTab({ showNotification }: { showNotification: (msg
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h3 className="text-base uppercase tracking-widest text-white font-bold">Fulfillment</h3>
-                  <a
-                    href={`/order/${selectedOrder.orderId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] text-emerald-400 hover:underline mt-1 inline-block"
-                  >
-                    View Live Tracking Page ↗
-                  </a>
+                  <div className="flex flex-wrap items-center gap-3 mt-1">
+                    <a
+                      href={`/order/${selectedOrder.orderId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-emerald-400 hover:underline inline-block"
+                    >
+                      View Live Tracking Page ↗
+                    </a>
+                    <span className="text-white/20">•</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsInvoiceOpen(true)}
+                      className="text-[11px] text-blue-400 hover:underline font-bold inline-flex items-center gap-1"
+                    >
+                      <span>📄 Print Tax Invoice</span>
+                    </button>
+                  </div>
                 </div>
                 <button onClick={() => setIsModalOpen(false)} className="text-white/50 hover:text-white uppercase tracking-wider">Close ✕</button>
               </div>
@@ -353,6 +365,14 @@ export default function OrdersTab({ showNotification }: { showNotification: (msg
             </div>
           </div>
         </div>
+      )}
+
+      {selectedOrder && (
+        <InvoiceModal
+          order={selectedOrder}
+          isOpen={isInvoiceOpen}
+          onClose={() => setIsInvoiceOpen(false)}
+        />
       )}
     </div>
   );

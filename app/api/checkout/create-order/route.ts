@@ -179,6 +179,12 @@ export async function POST(request: Request) {
       );
     }
 
+    // Dispatch order confirmation email asynchronously
+    if (gateway === "cod" || !process.env.RAZORPAY_KEY_ID) {
+      const { sendOrderConfirmationEmail } = await import("@/lib/email");
+      sendOrderConfirmationEmail(order).catch(console.error);
+    }
+
     return NextResponse.json({
       success: true,
       orderId: order.orderId,

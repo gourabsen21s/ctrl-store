@@ -25,7 +25,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { socialLinks, storeAddress, contactEmail } = body;
+    const { socialLinks, storeAddress, contactEmail, gamificationSettings, invoiceSettings } = body;
 
     const db = await connectToDatabase();
     if (!db) {
@@ -46,29 +46,51 @@ export async function PUT(req: NextRequest) {
         }))
       : [];
 
+    const updateDoc: Record<string, unknown> = {
+      socialLinks: sanitizedLinks,
+      ...(storeAddress !== undefined && { storeAddress: storeAddress.trim() }),
+      ...(contactEmail !== undefined && { contactEmail: contactEmail.trim() }),
+    };
+
+    if (gamificationSettings) {
+      updateDoc.gamificationSettings = {
+        enabled: Boolean(gamificationSettings.enabled),
+        freeShippingThreshold: Math.max(0, Number(gamificationSettings.freeShippingThreshold || 1999)),
+        freeGiftThreshold: Math.max(0, Number(gamificationSettings.freeGiftThreshold || 3999)),
+        freeGiftTitle: String(gamificationSettings.freeGiftTitle || "Webbing Keyfob (Exclusive Gift)").trim(),
+        freeGiftHandle: String(gamificationSettings.freeGiftHandle || "webbing-keyfob-gift").trim(),
+        freeGiftImage: String(gamificationSettings.freeGiftImage || "").trim(),
+      };
+    }
+
+    if (invoiceSettings) {
+      updateDoc.invoiceSettings = {
+        companyName: String(invoiceSettings.companyName || "CTRL + STYLE® Retail Pvt. Ltd.").trim(),
+        companyTagline: String(invoiceSettings.companyTagline || "Luxury Apparel & Tactical Goods").trim(),
+        companyAddress: String(invoiceSettings.companyAddress || "108 Brigade Road, Indiranagar, Bengaluru, KA 560038").trim(),
+        gstin: String(invoiceSettings.gstin || "29AABCU9603R1ZM").trim(),
+        state: String(invoiceSettings.state || "Karnataka (29)").trim(),
+        invoicePrefix: String(invoiceSettings.invoicePrefix || "INV-").trim(),
+        gstRate: Math.max(0, Number(invoiceSettings.gstRate || 5)),
+        supportEmail: String(invoiceSettings.supportEmail || "billing@ctrlstyle.com").trim(),
+        supportPhone: String(invoiceSettings.supportPhone || "+91 98765 43210").trim(),
+        footerNotes: String(invoiceSettings.footerNotes || "This is a computer-generated tax invoice. No signature required.").trim(),
+      };
+    }
+
     const updated = await SiteSettingsModel.findOneAndUpdate(
       {},
-      {
-        $set: {
-          socialLinks: sanitizedLinks,
-          ...(storeAddress !== undefined && { storeAddress: storeAddress.trim() }),
-          ...(contactEmail !== undefined && { contactEmail: contactEmail.trim() }),
-        },
-      },
+      { $set: updateDoc },
       { upsert: true, new: true }
     );
 
     return NextResponse.json({
       success: true,
-      settings: {
-        socialLinks: updated.socialLinks,
-        storeAddress: updated.storeAddress,
-        contactEmail: updated.contactEmail,
-      },
+      settings: updated,
     });
   } catch (error: unknown) {
     console.error("PUT /api/settings error:", error);
-    const msg = error instanceof Error ? error.message : "Failed to update settings";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Failed to update settings";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

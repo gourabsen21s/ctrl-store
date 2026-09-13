@@ -1,6 +1,10 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  type IGamificationSettings,
+  DEFAULT_GAMIFICATION_SETTINGS,
+} from "@/lib/settings-types";
 
 export type BagLine = {
   handle: string;
@@ -9,15 +13,36 @@ export type BagLine = {
   size: string;
   qty: number;
   image: string;
+  isFreeGift?: boolean;
+};
+
+export const FREE_SHIPPING_THRESHOLD = DEFAULT_GAMIFICATION_SETTINGS.freeShippingThreshold;
+export const FREE_GIFT_THRESHOLD = DEFAULT_GAMIFICATION_SETTINGS.freeGiftThreshold;
+
+export const FREE_GIFT_ITEM: BagLine = {
+  handle: DEFAULT_GAMIFICATION_SETTINGS.freeGiftHandle,
+  title: DEFAULT_GAMIFICATION_SETTINGS.freeGiftTitle,
+  price: 0,
+  size: "One size",
+  qty: 1,
+  image: DEFAULT_GAMIFICATION_SETTINGS.freeGiftImage,
+  isFreeGift: true,
 };
 
 type Ctx = {
   lines: BagLine[];
   count: number;
   subtotal: number;
-  add: (line: BagLine) => void;
+  isDrawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
+  add: (line: BagLine, openDrawerOnAdd?: boolean) => void;
   remove: (handle: string, size: string) => void;
+  updateQty: (handle: string, size: string, qty: number) => void;
   clearBag: () => void;
+  freeShippingUnlocked: boolean;
+  freeGiftUnlocked: boolean;
+  gamificationSettings: IGamificationSettings;
 };
 
 const BagContext = createContext<Ctx | null>(null);
@@ -30,14 +55,30 @@ export function useBag() {
 
 const KEY = "outfit-bag";
 
-/**
- * Session-scoped rather than a real cart — this build is a design study. It
- * still survives a reload, because a bag that silently empties on refresh
- * reads as a bug rather than as a deliberate limitation.
- */
 export default function BagProvider({ children }: { children: React.ReactNode }) {
   const [lines, setLines] = useState<BagLine[]>([]);
   const [ready, setReady] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [gamificationSettings, setGamificationSettings] = useState<IGamificationSettings>(
+    DEFAULT_GAMIFICATION_SETTINGS
+  );
+
+  // Fetch live gamification settings from MongoDB
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.gamificationSettings) {
+          setGamificationSettings({
+            ...DEFAULT_GAMIFICATION_SETTINGS,
+            ...data.gamificationSettings,
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch gamification settings:", err);
+      });
+  }, []);
 
   // Hydrate after mount so server and client markup agree on the first pass.
   useEffect(() => {
@@ -51,19 +92,64 @@ export default function BagProvider({ children }: { children: React.ReactNode })
   }, []);
 
   useEffect(() => {
-    // Gated on state, not a ref: both effects run in the same commit, so a ref
-    // flipped above would still let this write the empty initial state back
-    // over what was stored. Waiting for the re-render is what makes it safe.
     if (!ready) return;
     try {
       sessionStorage.setItem(KEY, JSON.stringify(lines));
     } catch {
-      /* quota or private mode — the bag just won't survive a reload */
+      /* quota or private mode */
     }
   }, [lines, ready]);
 
+  // Subtotal without free gift items
+  const subtotal = useMemo(() => {
+    return lines
+      .filter((l) => !l.isFreeGift)
+      .reduce((n, l) => n + l.qty * l.price, 0);
+  }, [lines]);
+
+  const freeShippingUnlocked = Boolean(
+    gamificationSettings.enabled &&
+      subtotal >= (gamificationSettings.freeShippingThreshold || 0)
+  );
+
+  const freeGiftUnlocked = Boolean(
+    gamificationSettings.enabled &&
+      gamificationSettings.freeGiftThreshold > 0 &&
+      subtotal >= gamificationSettings.freeGiftThreshold
+  );
+
+  const dynamicFreeGiftItem = useMemo<BagLine>(() => {
+    return {
+      handle: gamificationSettings.freeGiftHandle || DEFAULT_GAMIFICATION_SETTINGS.freeGiftHandle,
+      title: gamificationSettings.freeGiftTitle || DEFAULT_GAMIFICATION_SETTINGS.freeGiftTitle,
+      price: 0,
+      size: "One size",
+      qty: 1,
+      image: gamificationSettings.freeGiftImage || DEFAULT_GAMIFICATION_SETTINGS.freeGiftImage,
+      isFreeGift: true,
+    };
+  }, [gamificationSettings]);
+
+  // Automatically inject or remove the Free Gift line item based on dynamic subtotal & admin toggle
+  useEffect(() => {
+    if (!ready) return;
+
+    setLines((prev) => {
+      const hasGift = prev.some((l) => l.isFreeGift);
+      if (freeGiftUnlocked && !hasGift) {
+        return [...prev, dynamicFreeGiftItem];
+      } else if (!freeGiftUnlocked && hasGift) {
+        return prev.filter((l) => !l.isFreeGift);
+      } else if (freeGiftUnlocked && hasGift) {
+        // Update gift details if admin customized title or image
+        return prev.map((l) => (l.isFreeGift ? { ...dynamicFreeGiftItem, qty: 1 } : l));
+      }
+      return prev;
+    });
+  }, [freeGiftUnlocked, ready, dynamicFreeGiftItem]);
+
   const value = useMemo<Ctx>(() => {
-    const add = (line: BagLine) =>
+    const add = (line: BagLine, openDrawerOnAdd = true) => {
       setLines((prev) => {
         const i = prev.findIndex((l) => l.handle === line.handle && l.size === line.size);
         if (i === -1) return [...prev, line];
@@ -71,21 +157,46 @@ export default function BagProvider({ children }: { children: React.ReactNode })
         next[i] = { ...next[i], qty: next[i].qty + line.qty };
         return next;
       });
+      if (openDrawerOnAdd) {
+        setIsDrawerOpen(true);
+      }
+    };
 
-    const remove = (handle: string, size: string) =>
+    const remove = (handle: string, size: string) => {
       setLines((prev) => prev.filter((l) => !(l.handle === handle && l.size === size)));
+    };
+
+    const updateQty = (handle: string, size: string, qty: number) => {
+      if (qty <= 0) {
+        remove(handle, size);
+        return;
+      }
+      setLines((prev) =>
+        prev.map((l) => (l.handle === handle && l.size === size ? { ...l, qty } : l))
+      );
+    };
 
     const clearBag = () => setLines([]);
+    const openDrawer = () => setIsDrawerOpen(true);
+    const closeDrawer = () => setIsDrawerOpen(false);
 
     return {
       lines,
       add,
       remove,
+      updateQty,
       clearBag,
+      isDrawerOpen,
+      openDrawer,
+      closeDrawer,
+      freeShippingUnlocked,
+      freeGiftUnlocked,
+      gamificationSettings,
       count: lines.reduce((n, l) => n + l.qty, 0),
-      subtotal: lines.reduce((n, l) => n + l.qty * l.price, 0),
+      subtotal,
     };
-  }, [lines]);
+  }, [lines, isDrawerOpen, subtotal, freeShippingUnlocked, freeGiftUnlocked, gamificationSettings]);
 
   return <BagContext.Provider value={value}>{children}</BagContext.Provider>;
 }
+

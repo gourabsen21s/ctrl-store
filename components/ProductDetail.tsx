@@ -10,6 +10,9 @@ import ShareButton from "@/components/ShareButton";
 import ProductReviews from "@/components/ProductReviews";
 import SizeGuideModal from "@/components/SizeGuideModal";
 import CompleteTheLook from "@/components/CompleteTheLook";
+import ExpressCheckoutModal from "@/components/ExpressCheckoutModal";
+import RecentlyViewed from "@/components/RecentlyViewed";
+import { recordRecentlyViewed } from "@/lib/recently-viewed";
 
 /**
  * Scrolling image column against a sticky info column. The stick is on an
@@ -23,6 +26,7 @@ export default function ProductDetail({ product, relatedProducts }: { product: P
   const [size, setSize] = useState(product.sizes[0]);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [isExpressOpen, setIsExpressOpen] = useState(false);
 
   // Live Active Viewers & Recent Orders Social Proof
   const [viewers, setViewers] = useState(4);
@@ -44,6 +48,19 @@ export default function ProductDetail({ product, relatedProducts }: { product: P
 
     return () => clearInterval(interval);
   }, [product.handle]);
+
+  // Track product in recently viewed history
+  useEffect(() => {
+    recordRecentlyViewed({
+      handle: product.handle,
+      title: product.title,
+      price: product.price,
+      category: product.category,
+      image: imageFor(product, "front"),
+      color: product.color,
+      aspect: product.aspect,
+    });
+  }, [product]);
 
   // Size-specific stock computation
   const getSizeStock = (sizeName: string) => {
@@ -300,7 +317,7 @@ export default function ProductDetail({ product, relatedProducts }: { product: P
                     </span>
                     <span>Upcoming Drop Countdown</span>
                   </div>
-                  <span className="text-[10px] font-mono text-amber-400/80">
+                  <span suppressHydrationWarning className="text-[10px] font-mono text-amber-400/80">
                     Target: {new Date(product.dropDate!).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
@@ -354,20 +371,31 @@ export default function ProductDetail({ product, relatedProducts }: { product: P
                   </p>
                 </div>
               ) : !isSoldOut ? (
-                <button
-                  type="button"
-                  data-cursor
-                  onClick={onAdd}
-                  className="text-left text-2xl transition-opacity duration-200 hover:opacity-60"
-                >
-                  {added ? (
-                    "Added to Bag"
-                  ) : (
-                    <>
-                      Add to Bag <span aria-hidden>↗</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                  <button
+                    type="button"
+                    data-cursor
+                    onClick={onAdd}
+                    className="text-left text-2xl transition-opacity duration-200 hover:opacity-60"
+                  >
+                    {added ? (
+                      "Added to Bag"
+                    ) : (
+                      <>
+                        Add to Bag <span aria-hidden>↗</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    data-cursor
+                    onClick={() => setIsExpressOpen(true)}
+                    className="inline-flex items-center justify-center gap-1.5 border border-current/40 px-4 py-2 text-xs font-mono font-bold uppercase tracking-widest hover:bg-current hover:text-white dark:hover:text-black transition-all"
+                  >
+                    <span className="text-amber-500">⚡</span>
+                    <span>1-Click Buy</span>
+                  </button>
+                </div>
               ) : (
                 <div className="w-full sm:max-w-xs">
                   {waitlistSuccess ? (
@@ -447,6 +475,15 @@ export default function ProductDetail({ product, relatedProducts }: { product: P
         </div>
       </div>
 
+      {/* Express Checkout Modal */}
+      <ExpressCheckoutModal
+        product={product}
+        selectedSize={size}
+        qty={qty}
+        isOpen={isExpressOpen}
+        onClose={() => setIsExpressOpen(false)}
+      />
+
       {/* Verified Customer Reviews Section */}
       <ProductReviews productHandle={product.handle} productTitle={product.title} />
 
@@ -454,6 +491,9 @@ export default function ProductDetail({ product, relatedProducts }: { product: P
       {relatedProducts && relatedProducts.length > 0 && (
         <CompleteTheLook products={relatedProducts} />
       )}
+
+      {/* Recently Viewed Carousel */}
+      <RecentlyViewed currentHandle={product.handle} className="mt-16" />
     </div>
   );
 }
