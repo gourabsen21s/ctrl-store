@@ -11,6 +11,10 @@ export type Product = {
   sizes: string[];
   aspect: Aspect;
   description: string;
+  frontImage?: string;
+  backImage?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 };
 
 export const ASPECT_CLASS: Record<Aspect, string> = {
@@ -19,6 +23,14 @@ export const ASPECT_CLASS: Record<Aspect, string> = {
   square: "aspect-square",
   natural: "",
 };
+
+export const CATEGORIES = [
+  "All",
+  "Apparel",
+  "Bags",
+  "Headwear",
+  "Accessories",
+] as const;
 
 export const PRODUCTS: Product[] = [
   { handle: "heavy-tee-black", title: "Heavy Tee", price: 36.5, category: "Apparel", color: "Black", sizes: ["S", "M", "L", "XL", "2XL"], aspect: "large", description: "A 240gsm cotton tee cut boxy through the body, with a ribbed collar that holds its shape past the first wash." },
@@ -36,10 +48,25 @@ export const PRODUCTS: Product[] = [
   { handle: "webbing-keyfob", title: "Webbing Keyfob", price: 15, category: "Accessories", color: "Black", sizes: ["One size"], aspect: "natural", description: "Bar-tacked nylon webbing on a solid brass ring. Small, heavy, hard to lose." },
 ];
 
-export const getProduct = (handle: string) => PRODUCTS.find((p) => p.handle === handle);
+export const getProduct = (handle: string): Product | undefined =>
+  PRODUCTS.find((p) => p.handle === handle);
 
-export const imageFor = (handle: string, face: "front" | "back" = "front") =>
-  `/products/${handle}-${face}.jpg`;
+export const imageFor = (
+  target: string | Product,
+  face: "front" | "back" = "front"
+): string => {
+  if (typeof target === "object" && target !== null) {
+    if (face === "front" && target.frontImage) return target.frontImage;
+    if (face === "back" && target.backImage) return target.backImage;
+    return `/products/${target.handle}-${face}.jpg`;
+  }
+  const p = PRODUCTS.find((item) => item.handle === target);
+  if (p) {
+    if (face === "front" && p.frontImage) return p.frontImage;
+    if (face === "back" && p.backImage) return p.backImage;
+  }
+  return `/products/${target}-${face}.jpg`;
+};
 
-export const money = (n: number) =>
+export const money = (n: number): string =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD" });

@@ -26,7 +26,7 @@ export default function ProductDetail({ product }: { product: Product }) {
       price: product.price,
       size,
       qty,
-      image: imageFor(product.handle, "front"),
+      image: imageFor(product, "front"),
     });
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1600);
@@ -39,7 +39,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           {gallery.map((face, i) => (
             <Image
               key={i}
-              src={imageFor(product.handle, face)}
+              src={imageFor(product, face)}
               alt={`${product.title} — view ${i + 1}`}
               width={900}
               height={1200}

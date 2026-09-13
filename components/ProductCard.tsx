@@ -57,7 +57,7 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="relative overflow-hidden">
         <Image
           data-image="front"
-          src={imageFor(product.handle, "front")}
+          src={imageFor(product, "front")}
           alt={product.title}
           width={900}
           height={1200}
@@ -70,7 +70,7 @@ export default function ProductCard({ product }: { product: Product }) {
             over-exposed 1.2x state — the exposure move is what sells it. */}
         <Image
           data-image="back"
-          src={imageFor(product.handle, "back")}
+          src={imageFor(product, "back")}
           alt=""
           width={900}
           height={1200}

@@ -9,6 +9,7 @@ import { getLenis } from "@/components/providers/SmoothScroll";
 const LINKS = [
   { label: "Shop", href: "/" },
   { label: "Bag", href: "/bag" },
+  { label: "Admin", href: "/admin" },
 ];
 
 /**

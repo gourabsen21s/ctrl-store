@@ -1,21 +1,31 @@
 import { notFound } from "next/navigation";
 import Footer from "@/components/Footer";
 import ProductDetail from "@/components/ProductDetail";
-import { PRODUCTS, getProduct } from "@/lib/products";
+import { PRODUCTS } from "@/lib/products";
+import { getProductByHandle } from "@/lib/products-db";
+
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return PRODUCTS.map((p) => ({ handle: p.handle }));
 }
 
-export async function generateMetadata({ params }: PageProps<"/product/[handle]">) {
-  const { handle } = await params;
-  const product = getProduct(handle);
-  return { title: product ? `${product.title} — ${product.color}` : "Not found" };
+interface ProductPageProps {
+  params: Promise<{ handle: string }>;
 }
 
-export default async function ProductPage({ params }: PageProps<"/product/[handle]">) {
+export async function generateMetadata({ params }: ProductPageProps) {
   const { handle } = await params;
-  const product = getProduct(handle);
+  const product = await getProductByHandle(handle);
+  return {
+    title: product ? `${product.title} — ${product.color} | CTRL + STYLE` : "Product Not Found",
+    description: product?.description || "Curated apparel and goods",
+  };
+}
+
+export default async function ProductPage({ params }: ProductPageProps) {
+  const { handle } = await params;
+  const product = await getProductByHandle(handle);
   if (!product) notFound();
 
   return (
