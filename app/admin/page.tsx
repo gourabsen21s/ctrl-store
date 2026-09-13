@@ -10,6 +10,7 @@ interface ProductFormData {
   handle: string;
   title: string;
   price: string;
+  stock: string;
   category: string;
   color: string;
   sizes: string[];
@@ -23,6 +24,7 @@ const INITIAL_FORM: ProductFormData = {
   handle: "",
   title: "",
   price: "",
+  stock: "15",
   category: "Apparel",
   color: "Black",
   sizes: ["S", "M", "L", "XL"],
@@ -207,6 +209,7 @@ export default function AdminDashboard() {
       handle: p.handle,
       title: p.title,
       price: p.price.toString(),
+      stock: (p.stock !== undefined ? p.stock : 15).toString(),
       category: p.category,
       color: p.color,
       sizes: p.sizes || ["One size"],
@@ -294,6 +297,7 @@ export default function AdminDashboard() {
         title: formData.title,
         handle: formData.handle,
         price: parseFloat(formData.price),
+        stock: Math.max(0, parseInt(formData.stock || "0", 10)),
         category: formData.category,
         color: formData.color,
         sizes: formData.sizes,
@@ -507,6 +511,7 @@ export default function AdminDashboard() {
                   <th className="px-4 py-3.5">Item</th>
                   <th className="px-4 py-3.5">Category</th>
                   <th className="px-4 py-3.5">Price</th>
+                  <th className="px-4 py-3.5">Stock</th>
                   <th className="px-4 py-3.5">Color & Sizes</th>
                   <th className="px-4 py-3.5">Crop Aspect</th>
                   <th className="px-4 py-3.5 text-right">Actions</th>
@@ -515,13 +520,13 @@ export default function AdminDashboard() {
               <tbody className="divide-y divide-white/5">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-white/40 font-mono">
+                    <td colSpan={7} className="py-12 text-center text-white/40 font-mono">
                       Loading catalogue items...
                     </td>
                   </tr>
                 ) : products.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-white/40 font-mono">
+                    <td colSpan={7} className="py-12 text-center text-white/40 font-mono">
                       No products found. Click &quot;+ Add Product&quot; to create your first item!
                     </td>
                   </tr>
@@ -569,6 +574,26 @@ export default function AdminDashboard() {
 
                       {/* Price */}
                       <td className="px-4 py-3 font-bold text-white">{money(product.price)}</td>
+
+                      {/* Stock / Inventory */}
+                      <td className="px-4 py-3">
+                        {(product.stock ?? 15) === 0 ? (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 border border-red-500/40 bg-red-500/10 text-red-400 text-[10px] uppercase font-bold tracking-wider">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                            Sold Out (0)
+                          </span>
+                        ) : (product.stock ?? 15) <= 5 ? (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 border border-amber-500/40 bg-amber-500/10 text-amber-400 text-[10px] uppercase font-bold tracking-wider">
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                            Low ({product.stock} left)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-[10px] uppercase font-mono tracking-wider">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                            {product.stock ?? 15} units
+                          </span>
+                        )}
+                      </td>
 
                       {/* Color & Sizes */}
                       <td className="px-4 py-3">
@@ -767,7 +792,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Price */}
                 <div>
                   <label className="block text-xs font-mono uppercase text-white/60 mb-1">
@@ -781,6 +806,26 @@ export default function AdminDashboard() {
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                     placeholder="1999"
+                    className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                  />
+                </div>
+
+                {/* Stock (Units) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-mono uppercase text-white/60">
+                      Stock (Units) *
+                    </label>
+                    <span className="text-[9px] text-white/40 font-mono">0 = Sold Out</span>
+                  </div>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    required
+                    value={formData.stock}
+                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                    placeholder="15"
                     className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
                   />
                 </div>

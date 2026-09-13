@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
       description,
       frontImage,
       backImage,
+      stock,
     } = body;
 
     if (!title || !price || !category || !color) {
@@ -88,6 +89,7 @@ export async function POST(req: NextRequest) {
       sizes: Array.isArray(sizes) && sizes.length > 0 ? sizes : ["One size"],
       aspect: aspect || "large",
       description: description?.trim() || "",
+      stock: stock !== undefined ? Math.max(0, Number(stock)) : 15,
       frontImage: frontImage?.trim() || `/products/${cleanHandle}-front.jpg`,
       backImage: backImage?.trim() || `/products/${cleanHandle}-back.jpg`,
     });
@@ -101,6 +103,7 @@ export async function POST(req: NextRequest) {
       sizes: newProduct.sizes,
       aspect: newProduct.aspect,
       description: newProduct.description,
+      stock: newProduct.stock !== undefined ? newProduct.stock : 15,
       frontImage: newProduct.frontImage,
       backImage: newProduct.backImage,
       createdAt: newProduct.createdAt,

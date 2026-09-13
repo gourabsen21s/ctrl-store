@@ -11,6 +11,7 @@ export type Product = {
   sizes: string[];
   aspect: Aspect;
   description: string;
+  stock?: number;
   frontImage?: string;
   backImage?: string;
   createdAt?: string | Date;

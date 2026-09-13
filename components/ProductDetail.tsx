@@ -20,7 +20,12 @@ export default function ProductDetail({ product }: { product: Product }) {
 
   const gallery: ("front" | "back")[] = ["front", "back", "front"];
 
+  const isSoldOut = product.stock === 0;
+  const isLowStock = product.stock !== undefined && product.stock > 0 && product.stock <= 5;
+  const maxStock = product.stock !== undefined ? product.stock : 99;
+
   const onAdd = () => {
+    if (isSoldOut) return;
     add({
       handle: product.handle,
       title: product.title,
@@ -65,6 +70,25 @@ export default function ProductDetail({ product }: { product: Product }) {
               {product.title}
             </h1>
             <p className="mt-3 text-3xl">{money(product.price)}</p>
+
+            {/* Inventory / Stock Status Indicator */}
+            {isSoldOut ? (
+              <div className="mt-4 inline-flex items-center gap-2 border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-red-500">
+                <span className="h-2 w-2 rounded-full bg-red-500" />
+                <span>Sold Out — Currently out of stock</span>
+              </div>
+            ) : isLowStock ? (
+              <div className="mt-4 inline-flex items-center gap-2 border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-amber-500">
+                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                <span>Limited Drop: Only {product.stock} left in stock</span>
+              </div>
+            ) : (
+              <div className="mt-4 inline-flex items-center gap-2 border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span>In Stock ({product.stock ?? 15} units available)</span>
+              </div>
+            )}
+
             <p className="mt-5 max-w-[46ch] text-base">{product.description}</p>
 
             <dl className="mt-10 text-sm">
@@ -80,11 +104,12 @@ export default function ProductDetail({ product }: { product: Product }) {
                       key={s}
                       type="button"
                       data-cursor
+                      disabled={isSoldOut}
                       onClick={() => setSize(s)}
                       aria-pressed={size === s}
                       className={`transition-opacity duration-200 ${
                         size === s ? "underline underline-offset-4" : "opacity-45 hover:opacity-100"
-                      }`}
+                      } ${isSoldOut ? "cursor-not-allowed opacity-30" : ""}`}
                     >
                       {s}
                     </button>
@@ -93,35 +118,51 @@ export default function ProductDetail({ product }: { product: Product }) {
               </div>
             </dl>
 
-            <div className="flex items-center gap-6 border-t border-current/30 py-5 text-xl">
-              <button
-                type="button"
-                data-cursor
-                aria-label="Decrease quantity"
-                onClick={() => setQty((q) => Math.max(1, q - 1))}
-                className="leading-none"
-              >
-                −
-              </button>
-              <span className="tabular-nums">{qty}</span>
-              <button
-                type="button"
-                data-cursor
-                aria-label="Increase quantity"
-                onClick={() => setQty((q) => Math.min(99, q + 1))}
-                className="leading-none"
-              >
-                +
-              </button>
-            </div>
+            {!isSoldOut && (
+              <div className="flex items-center gap-6 border-t border-current/30 py-5 text-xl">
+                <button
+                  type="button"
+                  data-cursor
+                  aria-label="Decrease quantity"
+                  onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  className="leading-none"
+                >
+                  −
+                </button>
+                <span className="tabular-nums">{qty}</span>
+                <button
+                  type="button"
+                  data-cursor
+                  aria-label="Increase quantity"
+                  onClick={() => setQty((q) => Math.min(maxStock, q + 1))}
+                  disabled={qty >= maxStock}
+                  className="leading-none disabled:opacity-30"
+                >
+                  +
+                </button>
+              </div>
+            )}
 
             <button
               type="button"
               data-cursor
+              disabled={isSoldOut}
               onClick={onAdd}
-              className="mt-4 w-full border-t border-current/30 pt-5 text-left text-2xl transition-opacity duration-200 hover:opacity-60"
+              className={`mt-4 w-full border-t border-current/30 pt-5 text-left text-2xl transition-opacity duration-200 ${
+                isSoldOut
+                  ? "opacity-35 cursor-not-allowed text-neutral-400"
+                  : "hover:opacity-60"
+              }`}
             >
-              {added ? "Added to Bag" : "Add to Bag"} <span aria-hidden>↗</span>
+              {isSoldOut ? (
+                "Sold Out"
+              ) : added ? (
+                "Added to Bag"
+              ) : (
+                <>
+                  Add to Bag <span aria-hidden>↗</span>
+                </>
+              )}
             </button>
 
             {/* WhatsApp & Social Share */}

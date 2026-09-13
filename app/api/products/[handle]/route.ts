@@ -53,6 +53,7 @@ export async function PUT(req: NextRequest, { params }: Context) {
           sizes: body.sizes,
           aspect: body.aspect,
           description: body.description,
+          stock: body.stock !== undefined ? Math.max(0, Number(body.stock)) : undefined,
           frontImage: body.frontImage,
           backImage: body.backImage,
         },

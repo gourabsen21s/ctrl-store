@@ -85,15 +85,34 @@ export default function ProductCard({ product }: { product: Product }) {
           aria-hidden
           className="absolute inset-0 h-full w-full bg-curtain dark:bg-neutral-800"
         />
+
+        {/* Stock status badge */}
+        {product.stock === 0 && (
+          <div className="absolute top-3 right-3 z-10 bg-black/80 backdrop-blur-sm border border-red-500/60 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-red-400">
+            Sold Out
+          </div>
+        )}
+        {product.stock !== undefined && product.stock > 0 && product.stock <= 5 && (
+          <div className="absolute top-3 right-3 z-10 bg-black/80 backdrop-blur-sm border border-amber-500/60 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-amber-400 animate-pulse">
+            Only {product.stock} left
+          </div>
+        )}
       </div>
 
       <div className="mt-3 flex flex-col justify-between gap-2 text-lg leading-5 md:flex-row">
-        <p>{product.title}</p>
-        <p>{money(product.price)}</p>
+        <p className={product.stock === 0 ? "text-neutral-500" : ""}>{product.title}</p>
+        <p className={product.stock === 0 ? "text-neutral-500" : ""}>{money(product.price)}</p>
       </div>
-      <div className="mt-[6px] flex items-center gap-1 text-[11px] uppercase">
-        <span className="h-2 w-2 rounded-full bg-current" />
-        <span>{product.category}</span>
+      <div className="mt-[6px] flex items-center justify-between text-[11px] uppercase">
+        <div className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-current" />
+          <span>{product.category}</span>
+        </div>
+        {product.stock === 0 ? (
+          <span className="font-mono text-red-500 tracking-wider font-semibold">Sold Out</span>
+        ) : product.stock !== undefined && product.stock <= 5 ? (
+          <span className="font-mono text-amber-500 tracking-wider font-semibold">⚡ Low Stock</span>
+        ) : null}
       </div>
     </Link>
   );

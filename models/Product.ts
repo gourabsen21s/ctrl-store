@@ -9,6 +9,7 @@ export interface IProduct extends Document {
   sizes: string[];
   aspect: "large" | "small" | "square" | "natural";
   description: string;
+  stock?: number;
   frontImage?: string;
   backImage?: string;
   createdAt: Date;
@@ -66,6 +67,11 @@ const ProductSchema = new Schema<IProduct>(
     backImage: {
       type: String,
       trim: true,
+    },
+    stock: {
+      type: Number,
+      default: 15,
+      min: 0,
     },
   },
   {
