@@ -5,6 +5,8 @@ import ProductModel from "@/models/Product";
 import { type Product } from "@/lib/products";
 import { getProducts, ensureDbSeeded } from "@/lib/products-db";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

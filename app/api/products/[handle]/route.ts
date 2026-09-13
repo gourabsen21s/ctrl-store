@@ -4,6 +4,8 @@ import { connectToDatabase } from "@/lib/db";
 import ProductModel from "@/models/Product";
 import { getProductByHandle } from "@/lib/products-db";
 
+export const dynamic = "force-dynamic";
+
 type Context = {
   params: Promise<{ handle: string }>;
 };

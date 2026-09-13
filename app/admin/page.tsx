@@ -157,7 +157,7 @@ export default function AdminDashboard() {
         category: cat,
       });
 
-      const res = await fetch(`/api/products?${params.toString()}`);
+      const res = await fetch(`/api/products?${params.toString()}`, { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to fetch products");
       const data = await res.json();
 
@@ -533,6 +533,7 @@ export default function AdminDashboard() {
       showNotification(editingHandle ? "Product updated successfully!" : "New product created and live!");
       startTransition(() => {
         fetchProducts(currentPage, search, selectedCategory);
+        router.refresh();
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Submission failed";
