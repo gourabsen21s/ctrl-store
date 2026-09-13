@@ -36,7 +36,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "heavy-tee-black",
     title: "Heavy Tee",
-    price: 36.5,
+    price: 2499,
     category: "Apparel",
     color: "Black",
     sizes: ["S", "M", "L", "XL", "2XL"],
@@ -48,7 +48,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "six-panel-cap",
     title: "Six Panel Cap",
-    price: 25,
+    price: 1899,
     category: "Headwear",
     color: "Black",
     sizes: ["One size"],
@@ -60,7 +60,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "crew-heavyweight",
     title: "Heavyweight Crew",
-    price: 30,
+    price: 2999,
     category: "Apparel",
     color: "Black",
     sizes: ["S", "M", "L", "XL", "2XL"],
@@ -72,7 +72,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "roll-top-pack",
     title: "Roll Top Pack",
-    price: 30,
+    price: 3499,
     category: "Bags",
     color: "Black",
     sizes: ["24L"],
@@ -84,7 +84,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "canvas-tote-black",
     title: "Canvas Tote",
-    price: 30,
+    price: 1999,
     category: "Bags",
     color: "Black",
     sizes: ["One size"],
@@ -96,7 +96,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "ribbed-beanie",
     title: "Ribbed Beanie",
-    price: 20,
+    price: 1299,
     category: "Headwear",
     color: "Red",
     sizes: ["One size"],
@@ -108,7 +108,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "coated-tote-silver",
     title: "Coated Tote",
-    price: 25,
+    price: 2199,
     category: "Bags",
     color: "Silver",
     sizes: ["One size"],
@@ -120,7 +120,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "boxy-tee-natural",
     title: "Boxy Tee",
-    price: 30,
+    price: 2299,
     category: "Apparel",
     color: "Natural",
     sizes: ["S", "M", "L", "XL"],
@@ -132,7 +132,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "boxy-tee-black",
     title: "Boxy Tee",
-    price: 30,
+    price: 2299,
     category: "Apparel",
     color: "Black",
     sizes: ["S", "M", "L", "XL"],
@@ -144,7 +144,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "market-tote",
     title: "Market Tote",
-    price: 30,
+    price: 2499,
     category: "Bags",
     color: "Black",
     sizes: ["One size"],
@@ -156,7 +156,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "shopper-natural",
     title: "Shopper",
-    price: 30,
+    price: 1799,
     category: "Bags",
     color: "Natural",
     sizes: ["One size"],
@@ -168,7 +168,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "crew-natural",
     title: "Crew",
-    price: 33,
+    price: 2699,
     category: "Apparel",
     color: "Natural",
     sizes: ["S", "M", "L", "XL"],
@@ -180,7 +180,7 @@ export const PRODUCTS: Product[] = [
   {
     handle: "webbing-keyfob",
     title: "Webbing Keyfob",
-    price: 15,
+    price: 899,
     category: "Accessories",
     color: "Black",
     sizes: ["One size"],
@@ -217,4 +217,8 @@ export const imageFor = (
 };
 
 export const money = (n: number): string =>
-  n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+  n.toLocaleString("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: n % 1 === 0 ? 0 : 2,
+  });

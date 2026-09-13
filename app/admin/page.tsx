@@ -618,16 +618,16 @@ export default function AdminDashboard() {
                 {/* Price */}
                 <div>
                   <label className="block text-xs font-mono uppercase text-white/60 mb-1">
-                    Price (USD) *
+                    Price (INR ₹) *
                   </label>
                   <input
                     type="number"
-                    step="0.01"
+                    step="1"
                     min="0"
                     required
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    placeholder="35.00"
+                    placeholder="1999"
                     className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
                   />
                 </div>
