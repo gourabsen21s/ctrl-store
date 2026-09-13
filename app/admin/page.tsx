@@ -55,10 +55,17 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Active Tab: "products" | "subscribers"
-  const [activeTab, setActiveTab] = useState<"products" | "subscribers">("products");
+  // Active Tab: "products" | "subscribers" | "settings"
+  const [activeTab, setActiveTab] = useState<"products" | "subscribers" | "settings">("products");
   const [subscribers, setSubscribers] = useState<{ _id: string; email: string; status: string; createdAt: string }[]>([]);
   const [subscribersLoading, setSubscribersLoading] = useState(false);
+
+  // Social & Store Settings
+  const [socialLinks, setSocialLinks] = useState<{ id: string; platform: string; label: string; url: string; enabled: boolean }[]>([]);
+  const [storeAddress, setStoreAddress] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -170,10 +177,92 @@ export default function AdminDashboard() {
     showNotification("Exported subscribers CSV!");
   };
 
+  // 3. Fetch Settings (Social Media & Store Info)
+  const fetchSettings = async () => {
+    setSettingsLoading(true);
+    try {
+      const res = await fetch("/api/settings");
+      if (res.ok) {
+        const data = await res.json();
+        setSocialLinks(data.socialLinks || []);
+        setStoreAddress(data.storeAddress || "");
+        setContactEmail(data.contactEmail || "");
+      }
+    } catch (err) {
+      console.error("Failed to load settings:", err);
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSettingsSaving(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          socialLinks,
+          storeAddress,
+          contactEmail,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save settings");
+
+      showNotification("Social & Store settings saved to MongoDB Atlas!");
+      router.refresh();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save settings";
+      showNotification(msg, "error");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  const toggleSocial = (id: string) => {
+    setSocialLinks((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s))
+    );
+  };
+
+  const updateSocialUrl = (id: string, url: string) => {
+    setSocialLinks((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, url } : s))
+    );
+  };
+
+  const updateSocialLabel = (id: string, label: string) => {
+    setSocialLinks((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, label } : s))
+    );
+  };
+
+  const addCustomSocial = () => {
+    const newId = `custom-${Date.now()}`;
+    setSocialLinks((prev) => [
+      ...prev,
+      {
+        id: newId,
+        platform: "Custom Link",
+        label: "Discord",
+        url: "https://",
+        enabled: true,
+      },
+    ]);
+  };
+
+  const removeSocial = (id: string) => {
+    setSocialLinks((prev) => prev.filter((s) => s.id !== id));
+  };
+
   useEffect(() => {
     if (!sessionLoading) {
       fetchProducts(currentPage, search, selectedCategory);
       fetchSubscribers();
+      fetchSettings();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionLoading, currentPage, selectedCategory]);
@@ -447,6 +536,22 @@ export default function AdminDashboard() {
           <span>VIP Drop Waitlist ({subscribers.length})</span>
           {subscribers.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
         </button>
+        <button
+          onClick={() => {
+            setActiveTab("settings");
+            if (socialLinks.length === 0) fetchSettings();
+          }}
+          className={`px-4 py-2 border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === "settings"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          <span>Social & Store Info</span>
+          <span className="text-[10px] text-white/40 font-mono">
+            ({socialLinks.filter((s) => s.enabled).length} active)
+          </span>
+        </button>
       </div>
 
       {activeTab === "products" ? (
@@ -660,7 +765,7 @@ export default function AdminDashboard() {
             </div>
           )}
         </>
-      ) : (
+      ) : activeTab === "subscribers" ? (
         /* SUBSCRIBERS / VIP WAITLIST VIEW */
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -725,6 +830,192 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
+        </div>
+      ) : (
+        /* SOCIAL MEDIA & STORE CONFIGURATION VIEW */
+        <div className="space-y-8 max-w-4xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-white tracking-wide">
+                Social Media & Storefront Configuration
+              </h2>
+              <p className="text-xs font-mono text-white/50 mt-1">
+                Toggle active social channels, set official handles/URLs, and configure footer metadata.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={addCustomSocial}
+              className="px-3.5 py-2 border border-white/20 text-xs font-mono uppercase tracking-wider text-white hover:border-white hover:bg-white/5 transition-colors self-start sm:self-auto"
+            >
+              + Add Channel
+            </button>
+          </div>
+
+          {settingsLoading ? (
+            <div className="py-12 text-center text-white/40 font-mono text-xs">
+              Loading social & store configuration...
+            </div>
+          ) : (
+            <form onSubmit={handleSaveSettings} className="space-y-8">
+              {/* Social Channels List */}
+              <div className="space-y-4">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-white/60">
+                  Connected Social Platforms
+                </h3>
+
+                <div className="space-y-3">
+                  {socialLinks.map((social) => (
+                    <div
+                      key={social.id}
+                      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border transition-colors ${
+                        social.enabled
+                          ? "border-white/20 bg-[#141414]"
+                          : "border-white/5 bg-[#0e0e0e] opacity-60"
+                      }`}
+                    >
+                      {/* Toggle and Label */}
+                      <div className="flex items-center gap-3 sm:w-1/3">
+                        <button
+                          type="button"
+                          onClick={() => toggleSocial(social.id)}
+                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                            social.enabled ? "bg-emerald-500" : "bg-white/20"
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-black shadow-lg ring-0 transition duration-200 ease-in-out ${
+                              social.enabled ? "translate-x-4" : "translate-x-0"
+                            }`}
+                          />
+                        </button>
+
+                        <input
+                          type="text"
+                          value={social.label}
+                          onChange={(e) => updateSocialLabel(social.id, e.target.value)}
+                          className="border border-white/10 bg-transparent px-2.5 py-1 text-xs font-mono text-white focus:border-white focus:outline-none w-full"
+                          placeholder="Platform Name"
+                        />
+                      </div>
+
+                      {/* URL Input */}
+                      <div className="flex-1 flex items-center gap-2">
+                        <input
+                          type="url"
+                          value={social.url}
+                          onChange={(e) => updateSocialUrl(social.id, e.target.value)}
+                          placeholder="https://..."
+                          className="w-full border border-white/10 bg-black/60 px-3 py-1.5 text-xs font-mono text-white placeholder-white/20 focus:border-white focus:outline-none"
+                        />
+
+                        {social.url && (
+                          <a
+                            href={social.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2 py-1.5 border border-white/10 text-white/40 hover:text-white text-xs font-mono"
+                            title="Test Link"
+                          >
+                            ↗
+                          </a>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => removeSocial(social.id)}
+                          className="p-1.5 text-white/30 hover:text-red transition-colors text-sm"
+                          title="Delete Channel"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Store Information */}
+              <div className="border-t border-white/10 pt-6 space-y-4">
+                <h3 className="text-xs font-mono uppercase tracking-wider text-white/60">
+                  Storefront Contact & HQ Address
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Customer Support Email
+                    </label>
+                    <input
+                      type="email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="concierge@ctrlstyle.com"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                      Store / Studio Address
+                    </label>
+                    <input
+                      type="text"
+                      value={storeAddress}
+                      onChange={(e) => setStoreAddress(e.target.value)}
+                      placeholder="108 Brigade Road, Bengaluru"
+                      className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Live Footer Preview */}
+              <div className="border border-white/10 bg-black/60 p-5 rounded-none">
+                <p className="text-[10px] font-mono uppercase tracking-wider text-white/40 mb-3">
+                  Live Storefront Footer Preview
+                </p>
+                <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-mono border-t border-white/10 pt-3">
+                  <div>
+                    <span className="text-white font-bold">CTRL + STYLE</span>
+                    <p className="text-white/50 text-[11px] mt-0.5">{storeAddress || "Address not set"}</p>
+                    <p className="text-white/50 text-[11px]">{contactEmail || "Email not set"}</p>
+                  </div>
+                  <div className="flex flex-wrap gap-4">
+                    {socialLinks
+                      .filter((s) => s.enabled && s.url)
+                      .map((s) => (
+                        <span key={s.id} className="text-emerald-400 flex items-center gap-1">
+                          <span>{s.label}</span>
+                          <span className="text-[9px]">↗</span>
+                        </span>
+                      ))}
+                    {socialLinks.filter((s) => s.enabled && s.url).length === 0 && (
+                      <span className="text-white/30 italic">No social links enabled</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="flex justify-end pt-4">
+                <button
+                  type="submit"
+                  disabled={settingsSaving}
+                  className="px-8 py-3 border border-white bg-white text-black font-bold text-xs font-mono uppercase tracking-wider hover:bg-transparent hover:text-white transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {settingsSaving ? (
+                    <>
+                      <span className="h-2 w-2 rounded-full bg-black animate-ping" />
+                      Saving Settings...
+                    </>
+                  ) : (
+                    "Save Settings to MongoDB ↗"
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       )}
 

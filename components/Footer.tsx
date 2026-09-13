@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { BRAND, TAGLINE_A, TAGLINE_B, YEAR_MARK, BLURB } from "@/lib/site";
 import NewsletterSignup from "@/components/NewsletterSignup";
+import { getSiteSettings } from "@/lib/settings-db";
 
-const COLUMNS: { heading: string; links: string[] }[] = [
-  { heading: "Studio", links: ["Work", "Services", "About", "Careers"] },
-  { heading: "Social", links: ["Dribbble", "Instagram", "LinkedIn", "Twitter (X)"] },
-];
+export default async function Footer() {
+  const { socialLinks, storeAddress, contactEmail } = await getSiteSettings();
+  const enabledSocials = (socialLinks || []).filter((s) => s.enabled && s.url);
 
-export default function Footer() {
   return (
     <footer className="mx-auto mb-10 px-4 text-sm lg:px-6">
       <div className="mb-6 h-[5px] w-full bg-current" />
@@ -42,28 +41,57 @@ export default function Footer() {
           <p>{BRAND}</p>
           <p>All rights reserved © 2026</p>
         </div>
-        <div className="col-span-8 md:col-span-3">
-          <p>Placeholder Street 1</p>
-          <p>Unit 000</p>
-          <p>Somewhere</p>
-        </div>
         <div className="col-span-8 md:col-span-4">
-          <Link href="/" data-cursor>
+          <p className="opacity-80 leading-relaxed">{storeAddress}</p>
+          {contactEmail && (
+            <a
+              href={`mailto:${contactEmail}`}
+              className="inline-block mt-2 font-mono text-xs opacity-60 hover:opacity-100 hover:underline"
+            >
+              {contactEmail}
+            </a>
+          )}
+        </div>
+        <div className="col-span-8 md:col-span-3">
+          <Link href="/" data-cursor className="hover:underline underline-offset-4">
             Privacy Policy
           </Link>
         </div>
         <div className="order-first col-span-16 flex justify-between gap-6 md:order-last md:col-span-5">
-          {COLUMNS.map((col) => (
-            <ul key={col.heading} className="flex flex-col gap-1">
-              {col.links.map((l) => (
-                <li key={l}>
-                  <Link href="/" data-cursor>
-                    {l}
-                  </Link>
+          <ul className="flex flex-col gap-1">
+            <li className="font-mono text-xs uppercase opacity-40 mb-1">Studio</li>
+            {["Work", "Services", "About", "Careers"].map((l) => (
+              <li key={l}>
+                <Link href="/" data-cursor className="hover:underline underline-offset-4">
+                  {l}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <ul className="flex flex-col gap-1">
+            <li className="font-mono text-xs uppercase opacity-40 mb-1">Social</li>
+            {enabledSocials.length === 0 ? (
+              <li className="text-xs opacity-40 font-mono">None linked</li>
+            ) : (
+              enabledSocials.map((social) => (
+                <li key={social.id || social.platform}>
+                  <a
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-cursor
+                    className="hover:underline underline-offset-4 flex items-center gap-1 group"
+                  >
+                    <span>{social.label}</span>
+                    <span className="text-[10px] opacity-40 group-hover:opacity-100 transition-opacity">
+                      ↗
+                    </span>
+                  </a>
                 </li>
-              ))}
-            </ul>
-          ))}
+              ))
+            )}
+          </ul>
         </div>
       </div>
     </footer>
