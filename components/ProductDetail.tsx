@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { imageFor, money, type Product } from "@/lib/products";
 import { useBag } from "@/components/providers/BagProvider";
+import { useWishlist } from "@/components/providers/WishlistProvider";
 import ShareButton from "@/components/ShareButton";
 
 /**
@@ -14,6 +15,8 @@ import ShareButton from "@/components/ShareButton";
  */
 export default function ProductDetail({ product }: { product: Product }) {
   const { add } = useBag();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const isSaved = isInWishlist(product.handle);
   const [size, setSize] = useState(product.sizes[0]);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
@@ -143,27 +146,53 @@ export default function ProductDetail({ product }: { product: Product }) {
               </div>
             )}
 
-            <button
-              type="button"
-              data-cursor
-              disabled={isSoldOut}
-              onClick={onAdd}
-              className={`mt-4 w-full border-t border-current/30 pt-5 text-left text-2xl transition-opacity duration-200 ${
-                isSoldOut
-                  ? "opacity-35 cursor-not-allowed text-neutral-400"
-                  : "hover:opacity-60"
-              }`}
-            >
-              {isSoldOut ? (
-                "Sold Out"
-              ) : added ? (
-                "Added to Bag"
-              ) : (
-                <>
-                  Add to Bag <span aria-hidden>↗</span>
-                </>
-              )}
-            </button>
+            <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-t border-current/30 pt-5">
+              <button
+                type="button"
+                data-cursor
+                disabled={isSoldOut}
+                onClick={onAdd}
+                className={`text-left text-2xl transition-opacity duration-200 ${
+                  isSoldOut
+                    ? "opacity-35 cursor-not-allowed text-neutral-400"
+                    : "hover:opacity-60"
+                }`}
+              >
+                {isSoldOut ? (
+                  "Sold Out"
+                ) : added ? (
+                  "Added to Bag"
+                ) : (
+                  <>
+                    Add to Bag <span aria-hidden>↗</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                data-cursor
+                onClick={() => toggleWishlist(product)}
+                aria-label={isSaved ? "Remove from wishlist" : "Save to wishlist"}
+                className={`inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider py-2 transition-all ${
+                  isSaved
+                    ? "text-red font-bold"
+                    : "opacity-60 hover:opacity-100"
+                }`}
+              >
+                <svg
+                  className={`h-4 w-4 transition-transform ${isSaved ? "fill-current scale-110" : "fill-none stroke-current stroke-2"}`}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                  />
+                </svg>
+                <span>{isSaved ? "Saved in Wishlist" : "Save to Wishlist"}</span>
+              </button>
+            </div>
 
             {/* WhatsApp & Social Share */}
             <ShareButton product={product} />

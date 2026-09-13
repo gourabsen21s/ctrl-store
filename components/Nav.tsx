@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import Mark from "@/components/Mark";
 import { useBag } from "@/components/providers/BagProvider";
+import { useWishlist } from "@/components/providers/WishlistProvider";
 import { MenuPanel, MenuToggle } from "@/components/Menu";
 
 /**
@@ -13,6 +14,7 @@ import { MenuPanel, MenuToggle } from "@/components/Menu";
  */
 export default function Nav() {
   const { count } = useBag();
+  const { count: wishlistCount, openDrawer: openWishlist } = useWishlist();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -38,6 +40,16 @@ export default function Nav() {
                 <Link href="/" data-cursor className="underline underline-offset-[6px]">
                   Shop
                 </Link>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  data-cursor
+                  onClick={openWishlist}
+                  className="transition-opacity hover:opacity-70"
+                >
+                  Wishlist ({wishlistCount})
+                </button>
               </li>
               <li>
                 <Link href="/bag" data-cursor>

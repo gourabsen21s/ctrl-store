@@ -5,6 +5,8 @@ import "./globals.css";
 import ThemeProvider, { themeScript } from "@/components/providers/ThemeProvider";
 import { loaderScript } from "@/components/Preloader";
 import BagProvider from "@/components/providers/BagProvider";
+import WishlistProvider from "@/components/providers/WishlistProvider";
+import WishlistDrawer from "@/components/WishlistDrawer";
 import SmoothScroll from "@/components/providers/SmoothScroll";
 import Nav from "@/components/Nav";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
@@ -66,12 +68,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="bg-cream text-black selection:bg-red selection:text-cream dark:bg-black dark:text-cream red:bg-cream red:text-red red:selection:bg-black">
         <ThemeProvider>
           <BagProvider>
-            <SmoothScroll />
-            <Nav />
-            <ThemeSwitcher />
-            {children}
-            <Cursor />
-            <TransitionLayer />
+            <WishlistProvider>
+              <SmoothScroll />
+              <Nav />
+              <ThemeSwitcher />
+              {children}
+              <WishlistDrawer />
+              <Cursor />
+              <TransitionLayer />
+            </WishlistProvider>
           </BagProvider>
         </ThemeProvider>
       </body>

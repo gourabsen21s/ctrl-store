@@ -6,6 +6,7 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, registerGsap, T, prefersReducedMotion } from "@/lib/motion";
 import { ASPECT_CLASS, imageFor, money, type Product } from "@/lib/products";
+import { useWishlist } from "@/components/providers/WishlistProvider";
 
 /**
  * Two motions, deliberately split by cost:
@@ -18,6 +19,8 @@ import { ASPECT_CLASS, imageFor, money, type Product } from "@/lib/products";
 export default function ProductCard({ product }: { product: Product }) {
   const root = useRef<HTMLAnchorElement>(null);
   const crop = ASPECT_CLASS[product.aspect];
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const isSaved = isInWishlist(product.handle);
 
   useGSAP(
     () => {
@@ -85,6 +88,34 @@ export default function ProductCard({ product }: { product: Product }) {
           aria-hidden
           className="absolute inset-0 h-full w-full bg-curtain dark:bg-neutral-800"
         />
+
+        {/* Wishlist Heart Button */}
+        <button
+          type="button"
+          data-cursor
+          aria-label={isSaved ? `Remove ${product.title} from wishlist` : `Save ${product.title} to wishlist`}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist(product);
+          }}
+          className={`absolute top-3 left-3 z-20 flex h-8 w-8 items-center justify-center border transition-all duration-200 backdrop-blur-sm ${
+            isSaved
+              ? "border-red bg-red text-white scale-110 shadow-lg"
+              : "border-white/20 bg-black/60 text-white/80 hover:border-white hover:text-white hover:scale-105"
+          }`}
+        >
+          <svg
+            className={`h-4 w-4 transition-transform ${isSaved ? "fill-current" : "fill-none stroke-current stroke-2"}`}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+            />
+          </svg>
+        </button>
 
         {/* Stock status badge */}
         {product.stock === 0 && (
