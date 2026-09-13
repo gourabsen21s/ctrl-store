@@ -7,6 +7,7 @@ import { imageFor, money, type Product } from "@/lib/products";
 import { useBag } from "@/components/providers/BagProvider";
 import { useWishlist } from "@/components/providers/WishlistProvider";
 import ShareButton from "@/components/ShareButton";
+import ProductReviews from "@/components/ProductReviews";
 
 /**
  * Scrolling image column against a sticky info column. The stick is on an
@@ -199,6 +200,9 @@ export default function ProductDetail({ product }: { product: Product }) {
           </div>
         </div>
       </div>
+
+      {/* Verified Customer Reviews Section */}
+      <ProductReviews productHandle={product.handle} productTitle={product.title} />
     </div>
   );
 }

@@ -4,7 +4,30 @@ import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { type Product, type Aspect, CATEGORIES, money } from "@/lib/products";
+import { type Product, type Aspect, CATEGORIES, PRODUCTS, money } from "@/lib/products";
+
+interface AdminReview {
+  _id: string;
+  productHandle: string;
+  productTitle: string;
+  author: string;
+  rating: number;
+  title: string;
+  comment: string;
+  verifiedPurchase: boolean;
+  status: string;
+  createdAt: string;
+}
+
+const INITIAL_REVIEW_FORM = {
+  productHandle: "",
+  productTitle: "",
+  author: "Verified Customer",
+  rating: 5,
+  title: "",
+  comment: "",
+  verifiedPurchase: true,
+};
 
 interface ProductFormData {
   handle: string;
@@ -55,8 +78,8 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Active Tab: "products" | "subscribers" | "settings"
-  const [activeTab, setActiveTab] = useState<"products" | "subscribers" | "settings">("products");
+  // Active Tab: "products" | "subscribers" | "settings" | "reviews"
+  const [activeTab, setActiveTab] = useState<"products" | "subscribers" | "settings" | "reviews">("products");
   const [subscribers, setSubscribers] = useState<{ _id: string; email: string; status: string; createdAt: string }[]>([]);
   const [subscribersLoading, setSubscribersLoading] = useState(false);
 
@@ -66,6 +89,15 @@ export default function AdminDashboard() {
   const [contactEmail, setContactEmail] = useState("");
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
+
+  // Customer Reviews state
+  const [reviews, setReviews] = useState<AdminReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewForm, setReviewForm] = useState(INITIAL_REVIEW_FORM);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewSearch, setReviewSearch] = useState("");
+  const [reviewProductFilter, setReviewProductFilter] = useState("All");
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -258,11 +290,90 @@ export default function AdminDashboard() {
     setSocialLinks((prev) => prev.filter((s) => s.id !== id));
   };
 
+  // 3. Customer Reviews handlers
+  const fetchReviews = async () => {
+    setReviewsLoading(true);
+    try {
+      const res = await fetch("/api/admin/reviews");
+      if (res.ok) {
+        const data = await res.json();
+        setReviews(data.reviews || []);
+      }
+    } catch (err) {
+      console.error("Error fetching admin reviews:", err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const handleCreateReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewForm.productHandle || !reviewForm.title || !reviewForm.comment) {
+      showNotification("Product, review headline, and comment are required", "error");
+      return;
+    }
+    setReviewSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reviewForm),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification("Customer review published successfully");
+        setIsReviewModalOpen(false);
+        setReviewForm(INITIAL_REVIEW_FORM);
+        fetchReviews();
+      } else {
+        showNotification(data.error || "Failed to create review", "error");
+      }
+    } catch {
+      showNotification("Network error publishing review", "error");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const handleDeleteReview = async (id: string) => {
+    if (!confirm("Are you sure you want to permanently delete this customer review?")) return;
+    try {
+      const res = await fetch(`/api/admin/reviews/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        showNotification("Review deleted successfully");
+        setReviews((prev) => prev.filter((r) => r._id !== id));
+      } else {
+        showNotification("Failed to delete review", "error");
+      }
+    } catch {
+      showNotification("Network error deleting review", "error");
+    }
+  };
+
+  // Unified products list for dropdowns (static catalog + dynamically added)
+  const allCatalogProducts = Array.from(
+    new Map([...PRODUCTS, ...products].map((p) => [p.handle, p])).values()
+  );
+
+  const filteredReviews = reviews.filter((r) => {
+    const matchesFilter =
+      reviewProductFilter === "All" || r.productHandle === reviewProductFilter;
+    const matchesSearch =
+      !reviewSearch.trim() ||
+      r.author?.toLowerCase().includes(reviewSearch.toLowerCase()) ||
+      r.title?.toLowerCase().includes(reviewSearch.toLowerCase()) ||
+      r.comment?.toLowerCase().includes(reviewSearch.toLowerCase()) ||
+      r.productHandle?.toLowerCase().includes(reviewSearch.toLowerCase()) ||
+      r.productTitle?.toLowerCase().includes(reviewSearch.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
   useEffect(() => {
     if (!sessionLoading) {
       fetchProducts(currentPage, search, selectedCategory);
       fetchSubscribers();
       fetchSettings();
+      fetchReviews();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionLoading, currentPage, selectedCategory]);
@@ -484,7 +595,9 @@ export default function AdminDashboard() {
               ? "Products Catalog"
               : activeTab === "subscribers"
               ? "VIP Drop Waitlist"
-              : "Social & Store Settings"}
+              : activeTab === "settings"
+              ? "Social & Store Settings"
+              : "Customer Reviews"}
           </h1>
           <p className="mt-1 text-xs font-mono text-white/50">
             Authenticated as <span className="text-white font-semibold">{adminUser}</span> •{" "}
@@ -492,7 +605,9 @@ export default function AdminDashboard() {
               ? `${total} Total items`
               : activeTab === "subscribers"
               ? `${subscribers.length} VIP Subscribers`
-              : `${socialLinks.filter((s) => s.enabled).length} Active Channels`}
+              : activeTab === "settings"
+              ? `${socialLinks.filter((s) => s.enabled).length} Active Channels`
+              : `${reviews.length} Verified Reviews`}
           </p>
         </div>
 
@@ -521,6 +636,25 @@ export default function AdminDashboard() {
               <span>+ Add Channel</span>
             </button>
           )}
+          {activeTab === "reviews" && (
+            <button
+              onClick={() => {
+                if (allCatalogProducts.length > 0) {
+                  setReviewForm({
+                    ...INITIAL_REVIEW_FORM,
+                    productHandle: allCatalogProducts[0].handle,
+                    productTitle: allCatalogProducts[0].title,
+                  });
+                } else {
+                  setReviewForm(INITIAL_REVIEW_FORM);
+                }
+                setIsReviewModalOpen(true);
+              }}
+              className="flex items-center gap-2 bg-white px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:bg-neutral-200 active:scale-95"
+            >
+              <span>+ Add Review</span>
+            </button>
+          )}
           <button
             onClick={handleLogout}
             className="border border-white/20 px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-white/70 transition-colors hover:border-white hover:text-white"
@@ -531,10 +665,10 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-white/10 pb-2 font-mono text-xs uppercase">
+      <div className="flex items-center gap-2 border-b border-white/10 pb-2 font-mono text-xs uppercase overflow-x-auto">
         <button
           onClick={() => setActiveTab("products")}
-          className={`px-4 py-2 border-b-2 transition-colors ${
+          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
             activeTab === "products"
               ? "border-white text-white font-bold"
               : "border-transparent text-white/50 hover:text-white"
@@ -544,7 +678,7 @@ export default function AdminDashboard() {
         </button>
         <button
           onClick={() => setActiveTab("subscribers")}
-          className={`px-4 py-2 border-b-2 transition-colors flex items-center gap-2 ${
+          className={`px-4 py-2 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
             activeTab === "subscribers"
               ? "border-white text-white font-bold"
               : "border-transparent text-white/50 hover:text-white"
@@ -558,7 +692,7 @@ export default function AdminDashboard() {
             setActiveTab("settings");
             if (socialLinks.length === 0) fetchSettings();
           }}
-          className={`px-4 py-2 border-b-2 transition-colors flex items-center gap-2 ${
+          className={`px-4 py-2 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
             activeTab === "settings"
               ? "border-white text-white font-bold"
               : "border-transparent text-white/50 hover:text-white"
@@ -568,6 +702,20 @@ export default function AdminDashboard() {
           <span className="text-[10px] text-white/40 font-mono">
             ({socialLinks.filter((s) => s.enabled).length} active)
           </span>
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab("reviews");
+            if (reviews.length === 0) fetchReviews();
+          }}
+          className={`px-4 py-2 border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+            activeTab === "reviews"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          <span>Customer Reviews ({reviews.length})</span>
+          {reviews.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />}
         </button>
       </div>
 
@@ -848,7 +996,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         </div>
-      ) : (
+      ) : activeTab === "settings" ? (
         /* SOCIAL MEDIA & STORE CONFIGURATION VIEW */
         <div className="space-y-8 max-w-4xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
@@ -1033,6 +1181,212 @@ export default function AdminDashboard() {
               </div>
             </form>
           )}
+        </div>
+      ) : (
+        /* CUSTOMER REVIEWS VIEW */
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-white tracking-wide uppercase">
+                Customer Reviews Management
+              </h2>
+              <p className="text-xs font-mono text-white/50 mt-1">
+                Manage verified client feedback, star ratings, and testimonials across all store items.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={fetchReviews}
+                disabled={reviewsLoading}
+                className="px-3.5 py-2 border border-white/20 text-xs font-mono uppercase tracking-wider text-white hover:bg-white/5 transition-colors"
+              >
+                {reviewsLoading ? "Refreshing..." : "↻ Refresh"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (allCatalogProducts.length > 0) {
+                    setReviewForm({
+                      ...INITIAL_REVIEW_FORM,
+                      productHandle: allCatalogProducts[0].handle,
+                      productTitle: allCatalogProducts[0].title,
+                    });
+                  } else {
+                    setReviewForm(INITIAL_REVIEW_FORM);
+                  }
+                  setIsReviewModalOpen(true);
+                }}
+                className="px-4 py-2 bg-white text-black font-bold text-xs font-mono uppercase tracking-wider hover:bg-neutral-200 transition-colors"
+              >
+                + Add Review
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="border border-white/10 bg-[#121212] p-4">
+              <div className="text-[10px] font-mono uppercase text-white/50">Total Reviews</div>
+              <div className="text-2xl font-bold font-mono text-white mt-1">{reviews.length}</div>
+            </div>
+            <div className="border border-white/10 bg-[#121212] p-4">
+              <div className="text-[10px] font-mono uppercase text-white/50">Average Rating</div>
+              <div className="text-2xl font-bold font-mono text-amber-400 mt-1">
+                {reviews.length > 0
+                  ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+                  : "0.0"}{" "}
+                <span className="text-xs text-white/40">/ 5.0</span>
+              </div>
+            </div>
+            <div className="border border-white/10 bg-[#121212] p-4">
+              <div className="text-[10px] font-mono uppercase text-white/50">5-Star Reviews</div>
+              <div className="text-2xl font-bold font-mono text-emerald-400 mt-1">
+                {reviews.filter((r) => r.rating === 5).length}
+              </div>
+            </div>
+            <div className="border border-white/10 bg-[#121212] p-4">
+              <div className="text-[10px] font-mono uppercase text-white/50">Verified Ratio</div>
+              <div className="text-2xl font-bold font-mono text-white mt-1">
+                {reviews.length > 0
+                  ? Math.round((reviews.filter((r) => r.verifiedPurchase).length / reviews.length) * 100)
+                  : 100}
+                %
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Filter Toolbar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#141414] border border-white/10 p-3">
+            <div className="relative w-full sm:w-80">
+              <input
+                type="text"
+                value={reviewSearch}
+                onChange={(e) => setReviewSearch(e.target.value)}
+                placeholder="Search author, title, comment..."
+                className="w-full border border-white/15 bg-black/60 px-3 py-1.5 text-xs font-mono text-white placeholder-white/30 focus:border-white focus:outline-none"
+              />
+              {reviewSearch && (
+                <button
+                  onClick={() => setReviewSearch("")}
+                  className="absolute right-2.5 top-1.5 text-white/40 hover:text-white text-xs font-mono"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-[11px] font-mono uppercase text-white/50 whitespace-nowrap">Filter Product:</span>
+              <select
+                value={reviewProductFilter}
+                onChange={(e) => setReviewProductFilter(e.target.value)}
+                className="border border-white/15 bg-black px-3 py-1.5 text-xs font-mono text-white focus:border-white focus:outline-none max-w-[220px] truncate"
+              >
+                <option value="All">All Products ({reviews.length})</option>
+                {allCatalogProducts.map((p) => {
+                  const count = reviews.filter((r) => r.productHandle === p.handle).length;
+                  return (
+                    <option key={p.handle} value={p.handle}>
+                      {p.title} ({count})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+
+          {/* Reviews Table */}
+          <div className="overflow-x-auto border border-white/10 bg-[#121212]">
+            <table className="w-full text-left text-xs font-mono">
+              <thead className="border-b border-white/10 bg-black/40 text-white/50 uppercase tracking-wider">
+                <tr>
+                  <th className="px-4 py-3.5">Product</th>
+                  <th className="px-4 py-3.5">Rating</th>
+                  <th className="px-4 py-3.5">Reviewer</th>
+                  <th className="px-4 py-3.5">Review Headline & Feedback</th>
+                  <th className="px-4 py-3.5">Date</th>
+                  <th className="px-4 py-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {reviewsLoading ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-white/40 font-mono">
+                      Loading customer reviews...
+                    </td>
+                  </tr>
+                ) : filteredReviews.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-white/40 font-mono">
+                      {reviews.length === 0
+                        ? "No customer reviews yet. Click '+ Add Review' to publish the first testimonial!"
+                        : "No reviews match your search/filter criteria."}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredReviews.map((r) => (
+                    <tr key={r._id} className="transition-colors hover:bg-white/[0.02]">
+                      <td className="px-4 py-3 font-semibold text-white whitespace-nowrap">
+                        <Link
+                          href={`/products/${r.productHandle}`}
+                          target="_blank"
+                          className="hover:underline flex items-center gap-1.5"
+                        >
+                          <span>{r.productTitle || r.productHandle}</span>
+                          <span className="text-[10px] text-white/40">↗</span>
+                        </Link>
+                        <span className="block text-[10px] text-white/40 font-normal">
+                          /{r.productHandle}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-1 text-amber-400">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <span key={i} className={i < r.rating ? "text-amber-400" : "text-white/20"}>
+                              ★
+                            </span>
+                          ))}
+                          <span className="ml-1 text-[11px] text-white/60 font-mono font-bold">
+                            {r.rating}.0
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="font-bold text-white">{r.author}</div>
+                        {r.verifiedPurchase && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 text-[9px] tracking-wider uppercase mt-0.5">
+                            <span className="h-1 w-1 rounded-full bg-emerald-400" />
+                            Verified Buyer
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 max-w-xs sm:max-w-md">
+                        <div className="font-bold text-white tracking-tight">{r.title}</div>
+                        <p className="text-white/60 text-[11px] line-clamp-2 mt-0.5">{r.comment}</p>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-white/50 text-[11px]">
+                        {new Date(r.createdAt).toLocaleDateString("en-IN", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => handleDeleteReview(r._id)}
+                          className="px-2.5 py-1 border border-red/30 text-red text-[11px] uppercase tracking-wider hover:bg-red hover:text-white transition-colors"
+                          title="Permanently Delete Review"
+                        >
+                          ✕ Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -1351,6 +1705,163 @@ export default function AdminDashboard() {
                     : editingHandle
                     ? "Update Product"
                     : "Create Product"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD REVIEW MODAL */}
+      {isReviewModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="relative w-full max-w-xl border border-white/20 bg-[#141414] p-6 sm:p-8 shadow-2xl my-8">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+              <div>
+                <h2 className="text-xl font-bold uppercase tracking-tight">
+                  Add Customer Review
+                </h2>
+                <p className="text-xs text-white/50 font-mono mt-0.5">
+                  Publish a verified rating & review for any catalog item
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsReviewModalOpen(false)}
+                className="text-white/60 hover:text-white text-lg font-mono"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateReview} className="space-y-5">
+              {/* Product Selection */}
+              <div>
+                <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                  Product Catalog Item *
+                </label>
+                <select
+                  required
+                  value={reviewForm.productHandle}
+                  onChange={(e) => {
+                    const handle = e.target.value;
+                    const prod = allCatalogProducts.find((p) => p.handle === handle);
+                    setReviewForm((prev) => ({
+                      ...prev,
+                      productHandle: handle,
+                      productTitle: prod?.title || handle,
+                    }));
+                  }}
+                  className="w-full border border-white/20 bg-black px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                >
+                  <option value="" disabled>
+                    Select a product to review
+                  </option>
+                  {allCatalogProducts.map((p) => (
+                    <option key={p.handle} value={p.handle}>
+                      {p.title} ({p.handle}) — ₹{p.price}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Reviewer Name */}
+              <div>
+                <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                  Reviewer Name / Location
+                </label>
+                <input
+                  type="text"
+                  value={reviewForm.author}
+                  onChange={(e) => setReviewForm((prev) => ({ ...prev, author: e.target.value }))}
+                  placeholder="e.g. Arjun M., Bengaluru"
+                  className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                />
+              </div>
+
+              {/* Rating */}
+              <div>
+                <label className="block text-xs font-mono uppercase text-white/60 mb-1.5">
+                  Star Rating (1 - 5) *
+                </label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewForm((prev) => ({ ...prev, rating: star }))}
+                      className={`text-2xl transition-transform hover:scale-110 ${
+                        star <= reviewForm.rating ? "text-amber-400" : "text-white/20"
+                      }`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                  <span className="text-xs font-mono text-white/60 ml-2">
+                    {reviewForm.rating} of 5 Stars
+                  </span>
+                </div>
+              </div>
+
+              {/* Headline */}
+              <div>
+                <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                  Review Headline / Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={reviewForm.title}
+                  onChange={(e) => setReviewForm((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g. Unmatched drape, premium silhouette"
+                  className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none"
+                />
+              </div>
+
+              {/* Comment */}
+              <div>
+                <label className="block text-xs font-mono uppercase text-white/60 mb-1">
+                  Review Comment / Feedback *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={reviewForm.comment}
+                  onChange={(e) => setReviewForm((prev) => ({ ...prev, comment: e.target.value }))}
+                  placeholder="Write customer feedback, sizing notes, fabric impressions..."
+                  className="w-full border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white focus:border-white focus:outline-none resize-y"
+                />
+              </div>
+
+              {/* Verified Purchase Checkbox */}
+              <div className="flex items-center gap-3 pt-1">
+                <input
+                  type="checkbox"
+                  id="verifiedPurchaseCheck"
+                  checked={reviewForm.verifiedPurchase}
+                  onChange={(e) => setReviewForm((prev) => ({ ...prev, verifiedPurchase: e.target.checked }))}
+                  className="h-4 w-4 rounded border-white/20 bg-black text-emerald-500 focus:ring-0"
+                />
+                <label htmlFor="verifiedPurchaseCheck" className="text-xs font-mono text-white/80 cursor-pointer">
+                  Mark as <span className="text-emerald-400 font-bold">Verified Buyer</span> (purchased & delivered)
+                </label>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsReviewModalOpen(false)}
+                  className="border border-white/20 px-4 py-2 text-xs font-mono uppercase text-white/70 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reviewSubmitting}
+                  className="bg-white px-6 py-2 text-xs font-mono font-bold uppercase text-black hover:bg-neutral-200 transition-colors disabled:opacity-50"
+                >
+                  {reviewSubmitting ? "Publishing..." : "Publish Review ↗"}
                 </button>
               </div>
             </form>
