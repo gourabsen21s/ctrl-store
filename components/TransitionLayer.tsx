@@ -103,6 +103,7 @@ export default function TransitionLayer() {
     return () => {
       tl.kill();
       window.clearTimeout(timer);
+      clear(); // Guarantee we never leave the curtain stuck if unmounted or interrupted
     };
   }, [pathname]);
 

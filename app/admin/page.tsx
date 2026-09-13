@@ -6,6 +6,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { type Product, type Aspect, CATEGORIES, PRODUCTS, money } from "@/lib/products";
 import OrdersTab from "./OrdersTab";
+import AnalyticsTab from "./AnalyticsTab";
+import PromosTab from "./PromosTab";
+import WaitlistTab from "./WaitlistTab";
 
 interface AdminReview {
   _id: string;
@@ -79,8 +82,8 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Active Tab: "products" | "subscribers" | "settings" | "reviews" | "orders"
-  const [activeTab, setActiveTab] = useState<"products" | "subscribers" | "settings" | "reviews" | "orders">("orders");
+  // Active Tab: "analytics" | "products" | "subscribers" | "settings" | "reviews" | "orders" | "promos" | "waitlist"
+  const [activeTab, setActiveTab] = useState<"analytics" | "products" | "subscribers" | "settings" | "reviews" | "orders" | "promos" | "waitlist">("analytics");
   const [subscribers, setSubscribers] = useState<{ _id: string; email: string; status: string; createdAt: string }[]>([]);
   const [subscribersLoading, setSubscribersLoading] = useState(false);
 
@@ -592,7 +595,13 @@ export default function AdminDashboard() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center border-b border-white/10 pb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight uppercase">
-            {activeTab === "products"
+            {activeTab === "analytics"
+              ? "Analytics Dashboard"
+              : activeTab === "promos"
+              ? "Promo Codes"
+              : activeTab === "waitlist"
+              ? "Product Waitlists"
+              : activeTab === "products"
               ? "Products Catalog"
               : activeTab === "orders"
               ? "Order Management"
@@ -604,7 +613,13 @@ export default function AdminDashboard() {
           </h1>
           <p className="mt-1 text-xs font-mono text-white/50">
             Authenticated as <span className="text-white font-semibold">{adminUser}</span> •{" "}
-            {activeTab === "products"
+            {activeTab === "analytics"
+              ? "Overview"
+              : activeTab === "promos"
+              ? "Discount Engine"
+              : activeTab === "waitlist"
+              ? "Product Waitlists"
+              : activeTab === "products"
               ? `${total} Total items`
               : activeTab === "orders"
               ? "All orders"
@@ -672,6 +687,26 @@ export default function AdminDashboard() {
       {/* Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-white/10 pb-2 font-mono text-xs uppercase overflow-x-auto">
         <button
+          onClick={() => setActiveTab("analytics")}
+          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === "analytics"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          Analytics
+        </button>
+        <button
+          onClick={() => setActiveTab("promos")}
+          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === "promos"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          Promos
+        </button>
+        <button
           onClick={() => setActiveTab("orders")}
           className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
             activeTab === "orders"
@@ -680,6 +715,16 @@ export default function AdminDashboard() {
           }`}
         >
           Orders
+        </button>
+        <button
+          onClick={() => setActiveTab("waitlist")}
+          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === "waitlist"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          Waitlists
         </button>
         <button
           onClick={() => setActiveTab("products")}
@@ -734,8 +779,14 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {activeTab === "orders" ? (
+      {activeTab === "analytics" ? (
+        <AnalyticsTab showNotification={showNotification} />
+      ) : activeTab === "promos" ? (
+        <PromosTab showNotification={showNotification} />
+      ) : activeTab === "orders" ? (
         <OrdersTab showNotification={showNotification} />
+      ) : activeTab === "waitlist" ? (
+        <WaitlistTab />
       ) : activeTab === "products" ? (
         <>
           {/* Category & Search Toolbar */}

@@ -49,6 +49,11 @@ export default function Nav() {
                 </Link>
               </li>
               <li>
+                <Link href="/account" data-cursor className="transition-opacity hover:opacity-70">
+                  Account
+                </Link>
+              </li>
+              <li>
                 <button
                   type="button"
                   data-cursor

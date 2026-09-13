@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 const JWT_SECRET = process.env.JWT_SECRET || "default-secret-ctrl-store-development-only-replace-in-prod";
 const SECRET_KEY = new TextEncoder().encode(JWT_SECRET);
 const COOKIE_NAME = "ctrl_admin_session";
+const CUSTOMER_COOKIE_NAME = "ctrl_customer_session";
 
 export type AdminSession = {
   username: string;
@@ -61,4 +62,59 @@ export function validateAdminCredentials(username: string, password: string): bo
   const passMatch = password.trim() === expectedPass;
 
   return userMatch && passMatch;
+}
+
+// ----------------------------------------------------
+// CUSTOMER AUTHENTICATION
+// ----------------------------------------------------
+
+export type CustomerSession = {
+  customerId: string;
+  email: string;
+  name: string;
+};
+
+export async function signCustomerToken(payload: CustomerSession): Promise<string> {
+  return new SignJWT({ ...payload, role: "customer" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("30d")
+    .sign(SECRET_KEY);
+}
+
+export async function verifyCustomerToken(token: string): Promise<CustomerSession | null> {
+  try {
+    const { payload } = await jwtVerify(token, SECRET_KEY);
+    if (payload.role !== "customer") return null;
+    return {
+      customerId: payload.customerId as string,
+      email: payload.email as string,
+      name: payload.name as string,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function getCustomerSession(): Promise<CustomerSession | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(CUSTOMER_COOKIE_NAME)?.value;
+  if (!token) return null;
+  return verifyCustomerToken(token);
+}
+
+export async function setCustomerSessionCookie(token: string): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(CUSTOMER_COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+  });
+}
+
+export async function clearCustomerSessionCookie(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(CUSTOMER_COOKIE_NAME);
 }

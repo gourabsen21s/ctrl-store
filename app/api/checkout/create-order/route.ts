@@ -4,12 +4,13 @@ import Razorpay from "razorpay";
 import { connectToDatabase } from "@/lib/db";
 import { OrderModel } from "@/models/Order";
 import { ProductModel } from "@/models/Product";
+import { PromoModel } from "@/models/Promo";
 
 export async function POST(request: Request) {
   try {
     await connectToDatabase();
     const body = await request.json();
-    const { items, customer, shippingAddress, gateway } = body;
+    const { items, customer, shippingAddress, gateway, promoCode } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
@@ -42,8 +43,27 @@ export async function POST(request: Request) {
       });
     }
 
+    let discountAmount = 0;
+    let appliedPromoCode = undefined;
+
+    if (promoCode) {
+      const promo = await PromoModel.findOne({ code: promoCode.toUpperCase().trim() });
+      if (promo && promo.active) {
+        if (promo.usageLimit === 0 || promo.usageCount < promo.usageLimit) {
+          appliedPromoCode = promo.code;
+          if (promo.discountType === "percentage") {
+            discountAmount = (subtotal * promo.discountValue) / 100;
+          } else {
+            discountAmount = promo.discountValue;
+          }
+          // Ensure discount doesn't exceed subtotal
+          discountAmount = Math.min(discountAmount, subtotal);
+        }
+      }
+    }
+
     const shippingFee = subtotal >= 1999 ? 0 : 150; // Free shipping > 1999, else 150
-    const total = subtotal + shippingFee;
+    const total = Math.max(0, subtotal - discountAmount) + shippingFee;
 
     // Generate unique order ID
     const orderId = `CTRL-${uuidv4().substring(0, 8).toUpperCase()}`;
@@ -91,7 +111,8 @@ export async function POST(request: Request) {
       pricing: {
         subtotal,
         shippingFee,
-        discount: 0,
+        discount: discountAmount,
+        promoCode: appliedPromoCode,
         total,
       },
       payment: {

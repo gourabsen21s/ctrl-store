@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
@@ -20,6 +20,12 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [gateway, setGateway] = useState<"razorpay" | "sandbox">("sandbox");
 
+  // Promo Code State
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{code: string, discountAmount: number} | null>(null);
+  const [promoError, setPromoError] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -31,8 +37,57 @@ export default function CheckoutPage() {
     postalCode: "",
   });
 
-  const shippingFee = subtotal >= 1999 ? 0 : 150;
-  const total = subtotal + shippingFee;
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setForm(prev => ({
+            ...prev,
+            name: data.user.name || "",
+            email: data.user.email || "",
+            phone: data.user.phone || "",
+            street: data.user.defaultAddress?.street || "",
+            landmark: data.user.defaultAddress?.landmark || "",
+            city: data.user.defaultAddress?.city || "",
+            state: data.user.defaultAddress?.state || "",
+            postalCode: data.user.defaultAddress?.postalCode || "",
+          }));
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const discount = appliedPromo?.discountAmount || 0;
+  const newSubtotal = Math.max(0, subtotal - discount);
+  const shippingFee = newSubtotal >= 1999 ? 0 : 150;
+  const total = newSubtotal + shippingFee;
+
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim()) return;
+    setPromoLoading(true);
+    setPromoError("");
+    try {
+      const res = await fetch("/api/checkout/validate-promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoInput, subtotal }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Invalid promo code");
+      setAppliedPromo({ code: data.promo.code, discountAmount: data.promo.discountAmount });
+      setPromoInput("");
+    } catch (err: any) {
+      setPromoError(err.message);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const removePromo = () => {
+    setAppliedPromo(null);
+    setPromoError("");
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -58,6 +113,7 @@ export default function CheckoutPage() {
         },
         items: lines.map((l) => ({ ...l })),
         gateway,
+        promoCode: appliedPromo?.code,
       };
 
       const res = await fetch("/api/checkout/create-order", {
@@ -230,18 +286,58 @@ export default function CheckoutPage() {
               ))}
             </ul>
             
-            <div className="space-y-4 text-sm font-bold uppercase tracking-widest">
+            <div className="space-y-4 text-sm font-bold uppercase tracking-widest border-b border-current/20 pb-8">
               <div className="flex justify-between">
                 <span className="opacity-60">Subtotal</span>
                 <span>{money(subtotal)}</span>
               </div>
+              {appliedPromo && (
+                <div className="flex justify-between text-emerald-500">
+                  <span>Promo ({appliedPromo.code})</span>
+                  <span>-{money(appliedPromo.discountAmount)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="opacity-60">Shipping</span>
                 <span>{shippingFee === 0 ? "Free" : money(shippingFee)}</span>
               </div>
             </div>
+
+            {/* Promo Code Input */}
+            {!appliedPromo ? (
+              <div className="mt-8">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={promoInput}
+                    onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
+                    placeholder="PROMO CODE"
+                    className="flex-1 border border-current/20 bg-transparent px-4 py-3 uppercase outline-none focus:border-current text-sm font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyPromo}
+                    disabled={promoLoading || !promoInput.trim()}
+                    className="bg-current px-6 py-3 text-sm font-bold text-white dark:text-black uppercase tracking-widest disabled:opacity-50"
+                  >
+                    {promoLoading ? "..." : "Apply"}
+                  </button>
+                </div>
+                {promoError && <div className="mt-2 text-xs font-bold uppercase tracking-wider text-red-500">{promoError}</div>}
+              </div>
+            ) : (
+              <div className="mt-8 flex items-center justify-between border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-600 dark:text-emerald-400">
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold uppercase tracking-widest">Promo Code Applied</span>
+                  <span className="text-xs font-mono opacity-80">{appliedPromo.code}</span>
+                </div>
+                <button type="button" onClick={removePromo} className="text-xs uppercase font-bold tracking-wider hover:underline">
+                  Remove
+                </button>
+              </div>
+            )}
             
-            <div className="mt-8 flex justify-between border-t border-current/20 pt-8 text-2xl font-[900] tracking-tighter">
+            <div className="mt-8 flex justify-between pt-4 text-2xl font-[900] tracking-tighter">
               <span>Total</span>
               <span>{money(total)}</span>
             </div>

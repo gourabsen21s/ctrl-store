@@ -10,6 +10,7 @@ const LINKS = [
   { label: "Shop", href: "/" },
   { label: "Wishlist", href: "/wishlist" },
   { label: "Bag", href: "/bag" },
+  { label: "Account", href: "/account" },
   { label: "Admin", href: "/admin" },
 ];
 

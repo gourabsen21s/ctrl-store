@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { connectToDatabase } from "@/lib/db";
 import { OrderModel } from "@/models/Order";
 import { ProductModel } from "@/models/Product";
+import { PromoModel } from "@/models/Promo";
 import { sendOrderConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
@@ -66,6 +67,14 @@ export async function POST(request: Request) {
       await ProductModel.findOneAndUpdate(
         { handle: item.productHandle },
         { $inc: { stock: -item.qty } }
+      );
+    }
+
+    // Increment promo usage if applicable
+    if (order.pricing?.promoCode) {
+      await PromoModel.findOneAndUpdate(
+        { code: order.pricing.promoCode },
+        { $inc: { usageCount: 1 } }
       );
     }
 

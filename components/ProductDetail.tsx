@@ -22,6 +22,12 @@ export default function ProductDetail({ product }: { product: Product }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
+  // Waitlist state
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
+  const [waitlistSuccess, setWaitlistSuccess] = useState(false);
+  const [waitlistError, setWaitlistError] = useState("");
+
   const gallery: ("front" | "back")[] = ["front", "back", "front"];
 
   const isSoldOut = product.stock === 0;
@@ -40,6 +46,35 @@ export default function ProductDetail({ product }: { product: Product }) {
     });
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1600);
+  };
+
+  const onJoinWaitlist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!waitlistEmail || !waitlistEmail.includes("@")) {
+      setWaitlistError("Please enter a valid email.");
+      return;
+    }
+    
+    setWaitlistLoading(true);
+    setWaitlistError("");
+    
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: waitlistEmail, productHandle: product.handle }),
+      });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || "Failed to join waitlist");
+      
+      setWaitlistSuccess(true);
+      setWaitlistEmail("");
+    } catch (err: any) {
+      setWaitlistError(err.message);
+    } finally {
+      setWaitlistLoading(false);
+    }
   };
 
   return (
@@ -148,27 +183,52 @@ export default function ProductDetail({ product }: { product: Product }) {
             )}
 
             <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-t border-current/30 pt-5">
-              <button
-                type="button"
-                data-cursor
-                disabled={isSoldOut}
-                onClick={onAdd}
-                className={`text-left text-2xl transition-opacity duration-200 ${
-                  isSoldOut
-                    ? "opacity-35 cursor-not-allowed text-neutral-400"
-                    : "hover:opacity-60"
-                }`}
-              >
-                {isSoldOut ? (
-                  "Sold Out"
-                ) : added ? (
-                  "Added to Bag"
-                ) : (
-                  <>
-                    Add to Bag <span aria-hidden>↗</span>
-                  </>
-                )}
-              </button>
+              {!isSoldOut ? (
+                <button
+                  type="button"
+                  data-cursor
+                  onClick={onAdd}
+                  className="text-left text-2xl transition-opacity duration-200 hover:opacity-60"
+                >
+                  {added ? (
+                    "Added to Bag"
+                  ) : (
+                    <>
+                      Add to Bag <span aria-hidden>↗</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <div className="w-full sm:max-w-xs">
+                  {waitlistSuccess ? (
+                    <div className="text-sm font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                      ✓ You're on the list! We'll notify you.
+                    </div>
+                  ) : (
+                    <form onSubmit={onJoinWaitlist} className="flex flex-col gap-2">
+                      <label className="text-xs font-bold uppercase tracking-widest opacity-60">Join Waitlist</label>
+                      <div className="flex">
+                        <input
+                          type="email"
+                          value={waitlistEmail}
+                          onChange={(e) => setWaitlistEmail(e.target.value)}
+                          placeholder="Your Email"
+                          className="w-full border border-current/30 bg-transparent px-3 py-2 text-sm outline-none focus:border-current"
+                          required
+                        />
+                        <button
+                          type="submit"
+                          disabled={waitlistLoading}
+                          className="bg-current px-4 text-xs font-bold uppercase tracking-widest text-white dark:text-black transition-opacity hover:opacity-80 disabled:opacity-50"
+                        >
+                          {waitlistLoading ? "..." : "Join"}
+                        </button>
+                      </div>
+                      {waitlistError && <p className="text-xs text-red-500 font-bold mt-1">{waitlistError}</p>}
+                    </form>
+                  )}
+                </div>
+              )}
 
               <button
                 type="button"

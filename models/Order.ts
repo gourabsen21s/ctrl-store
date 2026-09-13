@@ -30,6 +30,7 @@ export interface IOrder extends Document {
     subtotal: number;
     shippingFee: number;
     discount: number;
+    promoCode?: string;
     total: number;
   };
   payment: {
@@ -88,6 +89,7 @@ const OrderSchema = new Schema<IOrder>(
       subtotal: { type: Number, required: true, min: 0 },
       shippingFee: { type: Number, required: true, min: 0 },
       discount: { type: Number, required: true, min: 0, default: 0 },
+      promoCode: { type: String, trim: true },
       total: { type: Number, required: true, min: 0 },
     },
     payment: {
