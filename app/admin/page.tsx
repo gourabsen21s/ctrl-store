@@ -514,12 +514,11 @@ export default function AdminDashboard() {
     setFormError(null);
 
     try {
-      const stockInt = Math.max(0, parseInt(formData.stock || "0", 10));
       const payload = {
         title: formData.title,
         handle: formData.handle,
         price: parseFloat(formData.price),
-        stock: stockInt,
+        stock: Math.max(0, parseInt(formData.stock || "0", 10)),
         category: formData.category,
         color: formData.color,
         sizes: formData.sizes,
@@ -543,21 +542,13 @@ export default function AdminDashboard() {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         throw new Error(data.error || "Failed to save product");
       }
 
-      // If editing, fire the dedicated stock PATCH endpoint as a guaranteed atomic write
-      if (editingHandle) {
-        await fetch(`/api/admin/products/${editingHandle}/stock`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ stock: stockInt }),
-        });
-      }
-
-      // Immediately patch the local products state with the server's response
+      // Optimistically update the admin list from the server's confirmed response.
+      // No refetch needed — the router cache fix (staleTimes.dynamic=0) ensures
+      // the product page on the website always loads fresh data from the server.
       if (editingHandle && data.product) {
         const saved = data.product;
         setProducts((prev) =>
@@ -567,7 +558,7 @@ export default function AdminDashboard() {
                   ...p,
                   title: saved.title,
                   price: saved.price,
-                  stock: stockInt, // use the value we sent (confirmed by PATCH above)
+                  stock: saved.stock,
                   category: saved.category,
                   color: saved.color,
                   sizes: saved.sizes,
@@ -586,6 +577,7 @@ export default function AdminDashboard() {
         editingHandle ? "Product updated successfully!" : "New product created and live!"
       );
 
+      // Only refetch the list for new products (to get the newly inserted item)
       if (!editingHandle) {
         startTransition(() => {
           fetchProducts(currentPage, search, selectedCategory);
