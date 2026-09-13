@@ -15,8 +15,8 @@ export async function ensureDbSeeded(): Promise<void> {
     await ProductModel.insertMany(
       PRODUCTS.map((p) => ({
         ...p,
-        frontImage: `/products/${p.handle}-front.jpg`,
-        backImage: `/products/${p.handle}-back.jpg`,
+        frontImage: p.frontImage,
+        backImage: p.backImage,
       }))
     );
   }
@@ -86,8 +86,8 @@ export async function getProducts(options: QueryProductsOptions = {}): Promise<Q
         sizes: d.sizes || ["One size"],
         aspect: d.aspect || "large",
         description: d.description || "",
-        frontImage: d.frontImage || `/products/${d.handle}-front.jpg`,
-        backImage: d.backImage || `/products/${d.handle}-back.jpg`,
+        frontImage: d.frontImage || "",
+        backImage: d.backImage || "",
         createdAt: d.createdAt,
         updatedAt: d.updatedAt,
       }));
@@ -158,8 +158,8 @@ export async function getProductByHandle(handle: string): Promise<Product | null
           sizes: doc.sizes || ["One size"],
           aspect: doc.aspect || "large",
           description: doc.description || "",
-          frontImage: doc.frontImage || `/products/${doc.handle}-front.jpg`,
-          backImage: doc.backImage || `/products/${doc.handle}-back.jpg`,
+          frontImage: doc.frontImage || "",
+          backImage: doc.backImage || "",
           createdAt: doc.createdAt,
           updatedAt: doc.updatedAt,
         };

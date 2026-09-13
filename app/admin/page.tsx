@@ -166,8 +166,8 @@ export default function AdminDashboard() {
       sizes: p.sizes || ["One size"],
       aspect: p.aspect,
       description: p.description || "",
-      frontImage: p.frontImage || `/products/${p.handle}-front.jpg`,
-      backImage: p.backImage || `/products/${p.handle}-back.jpg`,
+      frontImage: p.frontImage || "",
+      backImage: p.backImage || "",
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -447,13 +447,19 @@ export default function AdminDashboard() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="relative h-12 w-10 shrink-0 overflow-hidden bg-white/5 border border-white/10">
-                        <Image
-                          src={product.frontImage || `/products/${product.handle}-front.jpg`}
-                          alt={product.title}
-                          fill
-                          sizes="40px"
-                          className="object-cover"
-                        />
+                        {product.frontImage ? (
+                          <Image
+                            src={product.frontImage}
+                            alt={product.title}
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[8px] text-white/40">
+                            NO IMG
+                          </div>
+                        )}
                       </div>
                       <div>
                         <Link
