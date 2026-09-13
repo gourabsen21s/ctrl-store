@@ -126,6 +126,23 @@ export default function AdminDashboard() {
     setTimeout(() => setNotification(null), 4000);
   };
 
+  // Override Lenis scroll-lock when any admin modal is open.
+  // Lenis applies `overflow: hidden` to <html> via `.lenis-stopped`, which
+  // prevents native overflow-y-auto scrolling inside modals. Setting
+  // overflow-y directly on the element bypasses the CSS class entirely.
+  const anyModalOpen = isModalOpen || isReviewModalOpen || !!deleteTarget;
+  useEffect(() => {
+    const html = document.documentElement;
+    if (anyModalOpen) {
+      html.style.overflowY = "scroll";
+    } else {
+      html.style.overflowY = "";
+    }
+    return () => {
+      html.style.overflowY = "";
+    };
+  }, [anyModalOpen]);
+
   // 1. Check Session
   useEffect(() => {
     async function checkAuth() {
