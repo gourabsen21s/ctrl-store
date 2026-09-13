@@ -546,8 +546,37 @@ export default function AdminDashboard() {
         throw new Error(data.error || "Failed to save product");
       }
 
+      // Immediately patch the local products state with the server's response
+      // so the UI reflects the exact value saved in MongoDB without waiting for refetch
+      if (editingHandle && data.product) {
+        const saved = data.product;
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.handle === editingHandle
+              ? {
+                  ...p,
+                  title: saved.title,
+                  price: saved.price,
+                  stock: saved.stock,
+                  category: saved.category,
+                  color: saved.color,
+                  sizes: saved.sizes,
+                  aspect: saved.aspect,
+                  description: saved.description,
+                  frontImage: saved.frontImage,
+                  backImage: saved.backImage,
+                }
+              : p
+          )
+        );
+      }
+
       setIsModalOpen(false);
-      showNotification(editingHandle ? "Product updated successfully!" : "New product created and live!");
+      showNotification(
+        editingHandle
+          ? `Product updated! Stock saved as ${data.product?.stock ?? payload.stock}`
+          : "New product created and live!"
+      );
       startTransition(() => {
         fetchProducts(currentPage, search, selectedCategory);
         router.refresh();

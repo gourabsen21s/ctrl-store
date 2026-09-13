@@ -44,28 +44,32 @@ export async function PUT(req: NextRequest, { params }: Context) {
       );
     }
 
+    // Build a clean update — no undefined values, which Mongoose can silently skip
+    const update: Record<string, unknown> = {};
+    if (body.title !== undefined) update.title = String(body.title).trim();
+    if (body.price !== undefined) update.price = Math.max(0, Number(body.price));
+    if (body.category !== undefined) update.category = String(body.category).trim();
+    if (body.color !== undefined) update.color = String(body.color).trim();
+    if (body.sizes !== undefined) update.sizes = body.sizes;
+    if (body.aspect !== undefined) update.aspect = body.aspect;
+    if (body.description !== undefined) update.description = String(body.description).trim();
+    if (body.stock !== undefined) update.stock = Math.max(0, Math.floor(Number(body.stock)));
+    if (body.frontImage !== undefined) update.frontImage = String(body.frontImage).trim();
+    if (body.backImage !== undefined) update.backImage = String(body.backImage).trim();
+
+    console.log(`[PUT /api/products/${handle}] Updating stock →`, update.stock);
+
     const updated = await ProductModel.findOneAndUpdate(
       { handle },
-      {
-        $set: {
-          title: body.title,
-          price: body.price !== undefined ? Number(body.price) : undefined,
-          category: body.category,
-          color: body.color,
-          sizes: body.sizes,
-          aspect: body.aspect,
-          description: body.description,
-          stock: body.stock !== undefined ? Math.max(0, Number(body.stock)) : undefined,
-          frontImage: body.frontImage,
-          backImage: body.backImage,
-        },
-      },
-      { new: true }
+      { $set: update },
+      { new: true, runValidators: true }
     );
 
     if (!updated) {
       return NextResponse.json({ error: "Product not found to update" }, { status: 404 });
     }
+
+    console.log(`[PUT /api/products/${handle}] Saved stock in DB →`, updated.stock);
 
     return NextResponse.json({ success: true, product: updated });
   } catch (error: unknown) {
@@ -74,6 +78,7 @@ export async function PUT(req: NextRequest, { params }: Context) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
 
 export async function DELETE(req: NextRequest, { params }: Context) {
   try {
