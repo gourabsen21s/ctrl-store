@@ -17,6 +17,7 @@ type Ctx = {
   subtotal: number;
   add: (line: BagLine) => void;
   remove: (handle: string, size: string) => void;
+  clearBag: () => void;
 };
 
 const BagContext = createContext<Ctx | null>(null);
@@ -74,10 +75,13 @@ export default function BagProvider({ children }: { children: React.ReactNode })
     const remove = (handle: string, size: string) =>
       setLines((prev) => prev.filter((l) => !(l.handle === handle && l.size === size)));
 
+    const clearBag = () => setLines([]);
+
     return {
       lines,
       add,
       remove,
+      clearBag,
       count: lines.reduce((n, l) => n + l.qty, 0),
       subtotal: lines.reduce((n, l) => n + l.qty * l.price, 0),
     };

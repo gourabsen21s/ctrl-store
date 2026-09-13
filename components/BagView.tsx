@@ -56,9 +56,22 @@ export default function BagView() {
             ))}
           </ul>
 
-          <div className="mb-16 flex items-center justify-between text-3xl">
+          <div className="mb-8 flex items-center justify-between text-3xl">
             <span>Subtotal</span>
             <span className="tabular-nums">{money(subtotal)}</span>
+          </div>
+
+          <div className="mb-16">
+            <Link
+              href="/checkout"
+              data-cursor
+              className="block w-full bg-black py-6 text-center text-3xl font-[900] tracking-tighter text-white uppercase transition-transform hover:scale-[1.02] dark:bg-white dark:text-black"
+            >
+              Proceed to Checkout →
+            </Link>
+            <p className="mt-4 text-center text-sm font-bold uppercase tracking-widest opacity-60">
+              Free standard express shipping on orders above ₹1,999
+            </p>
           </div>
         </>
       )}

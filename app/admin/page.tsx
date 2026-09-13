@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { type Product, type Aspect, CATEGORIES, PRODUCTS, money } from "@/lib/products";
+import OrdersTab from "./OrdersTab";
 
 interface AdminReview {
   _id: string;
@@ -78,8 +79,8 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Active Tab: "products" | "subscribers" | "settings" | "reviews"
-  const [activeTab, setActiveTab] = useState<"products" | "subscribers" | "settings" | "reviews">("products");
+  // Active Tab: "products" | "subscribers" | "settings" | "reviews" | "orders"
+  const [activeTab, setActiveTab] = useState<"products" | "subscribers" | "settings" | "reviews" | "orders">("orders");
   const [subscribers, setSubscribers] = useState<{ _id: string; email: string; status: string; createdAt: string }[]>([]);
   const [subscribersLoading, setSubscribersLoading] = useState(false);
 
@@ -593,6 +594,8 @@ export default function AdminDashboard() {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight uppercase">
             {activeTab === "products"
               ? "Products Catalog"
+              : activeTab === "orders"
+              ? "Order Management"
               : activeTab === "subscribers"
               ? "VIP Drop Waitlist"
               : activeTab === "settings"
@@ -603,6 +606,8 @@ export default function AdminDashboard() {
             Authenticated as <span className="text-white font-semibold">{adminUser}</span> •{" "}
             {activeTab === "products"
               ? `${total} Total items`
+              : activeTab === "orders"
+              ? "All orders"
               : activeTab === "subscribers"
               ? `${subscribers.length} VIP Subscribers`
               : activeTab === "settings"
@@ -667,6 +672,16 @@ export default function AdminDashboard() {
       {/* Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-white/10 pb-2 font-mono text-xs uppercase overflow-x-auto">
         <button
+          onClick={() => setActiveTab("orders")}
+          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === "orders"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          Orders
+        </button>
+        <button
           onClick={() => setActiveTab("products")}
           className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
             activeTab === "products"
@@ -719,7 +734,9 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {activeTab === "products" ? (
+      {activeTab === "orders" ? (
+        <OrdersTab showNotification={showNotification} />
+      ) : activeTab === "products" ? (
         <>
           {/* Category & Search Toolbar */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
