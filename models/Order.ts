@@ -12,6 +12,7 @@ export interface IOrderItem {
 
 export interface IOrder extends Document {
   orderId: string;
+  customerId?: mongoose.Types.ObjectId;
   customer: {
     name: string;
     email: string;
@@ -31,6 +32,7 @@ export interface IOrder extends Document {
     shippingFee: number;
     discount: number;
     promoCode?: string;
+    coinsRedeemed?: number;
     total: number;
   };
   payment: {
@@ -71,6 +73,7 @@ const OrderSchema = new Schema<IOrder>(
       trim: true,
       index: true,
     },
+    customerId: { type: Schema.Types.ObjectId, ref: "Customer" },
     customer: {
       name: { type: String, required: true, trim: true },
       email: { type: String, required: true, trim: true, lowercase: true },
@@ -90,6 +93,7 @@ const OrderSchema = new Schema<IOrder>(
       shippingFee: { type: Number, required: true, min: 0 },
       discount: { type: Number, required: true, min: 0, default: 0 },
       promoCode: { type: String, trim: true },
+      coinsRedeemed: { type: Number, min: 0, default: 0 },
       total: { type: Number, required: true, min: 0 },
     },
     payment: {

@@ -111,7 +111,7 @@ export default function TransitionLayer() {
     <div
       ref={layer}
       aria-hidden
-      className="pointer-events-none invisible fixed inset-0 z-[60] flex items-center justify-center bg-black text-cream dark:bg-cream dark:text-black red:bg-red red:text-cream"
+      className="pointer-events-none invisible fixed inset-0 z-[300] flex items-center justify-center bg-black text-cream dark:bg-cream dark:text-black red:bg-red red:text-cream"
       style={{ clipPath: "inset(0% 0% 100% 0%)" }}
     >
       <Mark className="w-40" />

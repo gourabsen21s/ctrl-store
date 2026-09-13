@@ -8,10 +8,19 @@ export interface ISocialLink {
   enabled: boolean;
 }
 
+export interface IWalletSettings {
+  referrerReward: number;
+  refereeReward: number;
+  signupBonus: number;
+  maxRedemptionPercentage: number;
+  rewardTrigger: "order_placed" | "order_delivered";
+}
+
 export interface ISiteSettings extends Document {
   socialLinks: ISocialLink[];
   storeAddress: string;
   contactEmail: string;
+  walletSettings: IWalletSettings;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +63,14 @@ export const DEFAULT_SOCIAL_LINKS: ISocialLink[] = [
   },
 ];
 
+export const DEFAULT_WALLET_SETTINGS: IWalletSettings = {
+  referrerReward: 50,
+  refereeReward: 25,
+  signupBonus: 0,
+  maxRedemptionPercentage: 30, // max 30% of order value
+  rewardTrigger: "order_placed",
+};
+
 const SocialLinkSchema = new Schema<ISocialLink>(
   {
     id: { type: String, required: true },
@@ -61,6 +78,17 @@ const SocialLinkSchema = new Schema<ISocialLink>(
     label: { type: String, required: true },
     url: { type: String, required: true, trim: true },
     enabled: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
+const WalletSettingsSchema = new Schema<IWalletSettings>(
+  {
+    referrerReward: { type: Number, default: 50 },
+    refereeReward: { type: Number, default: 25 },
+    signupBonus: { type: Number, default: 0 },
+    maxRedemptionPercentage: { type: Number, default: 30 },
+    rewardTrigger: { type: String, enum: ["order_placed", "order_delivered"], default: "order_placed" },
   },
   { _id: false }
 );
@@ -78,6 +106,10 @@ const SiteSettingsSchema = new Schema<ISiteSettings>(
     contactEmail: {
       type: String,
       default: "concierge@ctrlstyle.com",
+    },
+    walletSettings: {
+      type: WalletSettingsSchema,
+      default: DEFAULT_WALLET_SETTINGS,
     },
   },
   { timestamps: true }

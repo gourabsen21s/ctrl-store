@@ -43,8 +43,13 @@ export async function POST(request: Request) {
       });
     }
 
+    const { getCustomerSession } = await import("@/lib/auth");
+    const session = await getCustomerSession();
+
     let discountAmount = 0;
     let appliedPromoCode = undefined;
+    let coinsRedeemed = 0;
+    const { coinsToRedeem } = body;
 
     if (promoCode) {
       const promo = await PromoModel.findOne({ code: promoCode.toUpperCase().trim() });
@@ -62,8 +67,41 @@ export async function POST(request: Request) {
       }
     }
 
+    let subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
     const shippingFee = subtotal >= 1999 ? 0 : 150; // Free shipping > 1999, else 150
-    const total = Math.max(0, subtotal - discountAmount) + shippingFee;
+
+    // Handle CTRL+ Coins redemption
+    if (coinsToRedeem && coinsToRedeem > 0 && session?.customerId) {
+      const { SiteSettingsModel, DEFAULT_WALLET_SETTINGS } = await import("@/models/SiteSettings");
+      const { getWallet, debitWallet } = await import("@/lib/wallet");
+      
+      const settingsDoc = await SiteSettingsModel.findOne();
+      const settings = settingsDoc?.walletSettings || DEFAULT_WALLET_SETTINGS;
+      const maxRedeemAmount = Math.floor(subtotalAfterDiscount * (settings.maxRedemptionPercentage / 100));
+      
+      const toRedeem = Math.min(coinsToRedeem, maxRedeemAmount);
+
+      if (toRedeem > 0) {
+        // Idempotency key per user per checkout attempt
+        const idempotencyKey = `checkout_${session.customerId}_${Date.now()}`;
+        try {
+          await debitWallet({
+            customerId: session.customerId,
+            amount: toRedeem,
+            reason: "order_redemption",
+            referenceId: "pending_order", // Will link orderId later
+            referenceType: "order",
+            idempotencyKey,
+          });
+          coinsRedeemed = toRedeem;
+        } catch (error) {
+          console.error("Wallet debit failed during checkout:", error);
+          return NextResponse.json({ error: "Failed to redeem coins or insufficient balance" }, { status: 400 });
+        }
+      }
+    }
+
+    const total = Math.max(0, subtotalAfterDiscount - coinsRedeemed) + shippingFee;
 
     // Generate unique order ID
     const orderId = `CTRL-${uuidv4().substring(0, 8).toUpperCase()}`;
@@ -105,6 +143,7 @@ export async function POST(request: Request) {
     // Create Order Document
     const order = await OrderModel.create({
       orderId,
+      customerId: session?.customerId || undefined,
       customer,
       shippingAddress,
       items: validatedItems,
@@ -113,6 +152,7 @@ export async function POST(request: Request) {
         shippingFee,
         discount: discountAmount,
         promoCode: appliedPromoCode,
+        coinsRedeemed,
         total,
       },
       payment: {
@@ -124,6 +164,20 @@ export async function POST(request: Request) {
         status: "processing",
       },
     });
+
+    // Update WalletTransaction with the real orderId
+    if (coinsRedeemed > 0 && session?.customerId) {
+      const { WalletTransactionModel } = await import("@/models/WalletTransaction");
+      await WalletTransactionModel.findOneAndUpdate(
+        { 
+          customerId: session.customerId, 
+          reason: "order_redemption",
+          referenceId: "pending_order" 
+        },
+        { $set: { referenceId: orderId } },
+        { sort: { createdAt: -1 } }
+      );
+    }
 
     return NextResponse.json({
       success: true,

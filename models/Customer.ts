@@ -13,6 +13,9 @@ export interface ICustomer extends Document {
     country: string;
     landmark?: string;
   };
+  referralCode?: string;
+  referredBy?: mongoose.Types.ObjectId;
+  walletId?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +34,9 @@ const CustomerSchema = new Schema<ICustomer>(
       country: { type: String, trim: true, default: "IN" },
       landmark: { type: String, trim: true },
     },
+    referralCode: { type: String, unique: true, sparse: true },
+    referredBy: { type: Schema.Types.ObjectId, ref: "Customer" },
+    walletId: { type: Schema.Types.ObjectId, ref: "Wallet" },
   },
   {
     timestamps: true,

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { money } from "@/lib/products";
+import { WalletWidget } from "@/components/WalletWidget";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -137,7 +138,12 @@ export default function AccountPage() {
 
         {/* Account Details Section */}
         <div>
-          <h2 className="mb-6 text-2xl font-bold uppercase tracking-tight border-b border-current/10 pb-4">Profile</h2>
+          <h2 className="mb-6 text-2xl font-bold uppercase tracking-tight border-b border-current/10 pb-4">Profile & Wallet</h2>
+          
+          <div className="mb-8">
+            <WalletWidget />
+          </div>
+
           <div className="border border-current/20 p-6 font-mono text-sm uppercase tracking-widest">
             <div className="mb-4">
               <span className="opacity-60 block text-xs mb-1">Name</span>

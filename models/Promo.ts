@@ -7,6 +7,7 @@ const PromoSchema = new mongoose.Schema({
   active: { type: Boolean, default: true },
   usageLimit: { type: Number, default: 0 }, // 0 means unlimited
   usageCount: { type: Number, default: 0 },
+  cashbackCoins: { type: Number, default: 0 }, // 0 means no cashback
 }, { timestamps: true });
 
 export const PromoModel = mongoose.models.Promo || mongoose.model("Promo", PromoSchema);

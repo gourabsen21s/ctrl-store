@@ -37,6 +37,13 @@ export default function CheckoutPage() {
     postalCode: "",
   });
 
+  // Wallet state
+  const [wallet, setWallet] = useState<any>(null);
+  const [coinsInput, setCoinsInput] = useState("");
+  const [appliedCoins, setAppliedCoins] = useState(0);
+  const [coinsError, setCoinsError] = useState("");
+  const [coinsLoading, setCoinsLoading] = useState(false);
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then(res => res.json())
@@ -53,15 +60,25 @@ export default function CheckoutPage() {
             state: data.user.defaultAddress?.state || "",
             postalCode: data.user.defaultAddress?.postalCode || "",
           }));
+
+          // Fetch wallet if logged in
+          fetch("/api/wallet")
+            .then(res => res.json())
+            .then(wData => {
+              if (wData.success) {
+                setWallet(wData.wallet);
+              }
+            })
+            .catch(console.error);
         }
       })
       .catch(console.error);
   }, []);
 
   const discount = appliedPromo?.discountAmount || 0;
-  const newSubtotal = Math.max(0, subtotal - discount);
-  const shippingFee = newSubtotal >= 1999 ? 0 : 150;
-  const total = newSubtotal + shippingFee;
+  const subtotalAfterDiscount = Math.max(0, subtotal - discount);
+  const shippingFee = subtotal >= 1999 ? 0 : 150;
+  const total = Math.max(0, subtotalAfterDiscount - appliedCoins) + shippingFee;
 
   const handleApplyPromo = async () => {
     if (!promoInput.trim()) return;
@@ -87,6 +104,41 @@ export default function CheckoutPage() {
   const removePromo = () => {
     setAppliedPromo(null);
     setPromoError("");
+    setAppliedCoins(0); // Removing promo might change max redeem, so reset coins
+  };
+
+  const handleApplyCoins = async () => {
+    if (!coinsInput.trim()) return;
+    const coinsToRedeem = parseInt(coinsInput, 10);
+    if (isNaN(coinsToRedeem) || coinsToRedeem <= 0) return;
+
+    setCoinsLoading(true);
+    setCoinsError("");
+    try {
+      const res = await fetch("/api/wallet/validate-redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subtotalAfterDiscount, coinsToRedeem }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to validate coins");
+      
+      if (data.validAmount > 0) {
+        setAppliedCoins(data.validAmount);
+        setCoinsInput("");
+      } else {
+        throw new Error(`Max allowed coins: ${data.maxAllowed}`);
+      }
+    } catch (err: any) {
+      setCoinsError(err.message);
+    } finally {
+      setCoinsLoading(false);
+    }
+  };
+
+  const removeCoins = () => {
+    setAppliedCoins(0);
+    setCoinsError("");
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -114,6 +166,7 @@ export default function CheckoutPage() {
         items: lines.map((l) => ({ ...l })),
         gateway,
         promoCode: appliedPromo?.code,
+        coinsToRedeem: appliedCoins,
       };
 
       const res = await fetch("/api/checkout/create-order", {
@@ -297,11 +350,57 @@ export default function CheckoutPage() {
                   <span>-{money(appliedPromo.discountAmount)}</span>
                 </div>
               )}
+              {appliedCoins > 0 && (
+                <div className="flex justify-between text-blue-500">
+                  <span>CTRL+ Coins</span>
+                  <span>-{money(appliedCoins)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="opacity-60">Shipping</span>
                 <span>{shippingFee === 0 ? "Free" : money(shippingFee)}</span>
               </div>
             </div>
+
+            {/* Wallet Coins Input */}
+            {wallet && wallet.balance > 0 && !appliedCoins && (
+              <div className="mt-8 mb-4 border border-blue-500/30 bg-blue-500/10 p-6">
+                <div className="text-xs font-bold uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-4">
+                  Wallet Balance: {wallet.balance} Coins
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={coinsInput}
+                    onChange={(e) => setCoinsInput(e.target.value)}
+                    placeholder="AMOUNT TO REDEEM"
+                    min="1"
+                    max={wallet.balance}
+                    className="flex-1 border border-current/20 bg-transparent px-4 py-3 uppercase outline-none focus:border-current text-sm font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoins}
+                    disabled={coinsLoading || !coinsInput.trim()}
+                    className="bg-current px-6 py-3 text-sm font-bold text-white dark:text-black uppercase tracking-widest disabled:opacity-50"
+                  >
+                    {coinsLoading ? "..." : "Redeem"}
+                  </button>
+                </div>
+                {coinsError && <div className="mt-2 text-[10px] font-bold uppercase tracking-wider text-red-500">{coinsError}</div>}
+              </div>
+            )}
+            {appliedCoins > 0 && (
+              <div className="mt-8 mb-4 flex items-center justify-between border border-blue-500/30 bg-blue-500/10 p-4 text-blue-600 dark:text-blue-400">
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold uppercase tracking-widest">Coins Redeemed</span>
+                  <span className="text-xs font-mono opacity-80">{appliedCoins} Coins = {money(appliedCoins)}</span>
+                </div>
+                <button type="button" onClick={removeCoins} className="text-xs uppercase font-bold tracking-wider hover:underline">
+                  Remove
+                </button>
+              </div>
+            )}
 
             {/* Promo Code Input */}
             {!appliedPromo ? (

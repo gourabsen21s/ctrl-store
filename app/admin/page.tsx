@@ -9,6 +9,7 @@ import OrdersTab from "./OrdersTab";
 import AnalyticsTab from "./AnalyticsTab";
 import PromosTab from "./PromosTab";
 import WaitlistTab from "./WaitlistTab";
+import WalletsTab from "./WalletsTab";
 
 interface AdminReview {
   _id: string;
@@ -82,8 +83,8 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  // Active Tab: "analytics" | "products" | "subscribers" | "settings" | "reviews" | "orders" | "promos" | "waitlist"
-  const [activeTab, setActiveTab] = useState<"analytics" | "products" | "subscribers" | "settings" | "reviews" | "orders" | "promos" | "waitlist">("analytics");
+  // Active Tab: "analytics" | "products" | "subscribers" | "settings" | "reviews" | "orders" | "promos" | "waitlist" | "wallets"
+  const [activeTab, setActiveTab] = useState<"analytics" | "products" | "subscribers" | "settings" | "reviews" | "orders" | "promos" | "waitlist" | "wallets">("analytics");
   const [subscribers, setSubscribers] = useState<{ _id: string; email: string; status: string; createdAt: string }[]>([]);
   const [subscribersLoading, setSubscribersLoading] = useState(false);
 
@@ -776,6 +777,16 @@ export default function AdminDashboard() {
           Waitlists
         </button>
         <button
+          onClick={() => setActiveTab("wallets")}
+          className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
+            activeTab === "wallets"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          Wallets
+        </button>
+        <button
           onClick={() => setActiveTab("products")}
           className={`px-4 py-2 border-b-2 transition-colors whitespace-nowrap ${
             activeTab === "products"
@@ -836,6 +847,8 @@ export default function AdminDashboard() {
         <OrdersTab showNotification={showNotification} />
       ) : activeTab === "waitlist" ? (
         <WaitlistTab />
+      ) : activeTab === "wallets" ? (
+        <WalletsTab showNotification={showNotification} />
       ) : activeTab === "products" ? (
         <>
           {/* Category & Search Toolbar */}

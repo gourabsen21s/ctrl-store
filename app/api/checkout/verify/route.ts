@@ -70,12 +70,40 @@ export async function POST(request: Request) {
       );
     }
 
-    // Increment promo usage if applicable
+    // Increment promo usage and give cashback if applicable
     if (order.pricing?.promoCode) {
-      await PromoModel.findOneAndUpdate(
+      const promo = await PromoModel.findOneAndUpdate(
         { code: order.pricing.promoCode },
-        { $inc: { usageCount: 1 } }
+        { $inc: { usageCount: 1 } },
+        { new: true } // get the updated doc
       );
+
+      // Trigger coupon cashback
+      if (promo && promo.cashbackCoins > 0 && order.customerId) {
+        const { creditWallet } = await import("@/lib/wallet");
+        try {
+          await creditWallet({
+            customerId: order.customerId.toString(),
+            amount: promo.cashbackCoins,
+            reason: "coupon_cashback",
+            referenceId: promo.code,
+            referenceType: "coupon",
+            idempotencyKey: `cashback_${order.orderId}`,
+          });
+        } catch (err) {
+          console.error("Failed to credit cashback for order:", order.orderId, err);
+        }
+      }
+    }
+
+    // Trigger referral reward
+    if (order.customerId) {
+      const { triggerReferralReward } = await import("@/lib/referral");
+      try {
+        await triggerReferralReward(order.customerId.toString(), order.orderId);
+      } catch (err) {
+        console.error("Failed to trigger referral reward for order:", order.orderId, err);
+      }
     }
 
     // Send confirmation email asynchronously (do not await to speed up response)

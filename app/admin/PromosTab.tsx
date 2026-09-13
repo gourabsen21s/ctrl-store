@@ -13,6 +13,7 @@ export default function PromosTab({ showNotification }: { showNotification: (msg
   const [discountType, setDiscountType] = useState("percentage");
   const [discountValue, setDiscountValue] = useState("");
   const [usageLimit, setUsageLimit] = useState("");
+  const [cashbackCoins, setCashbackCoins] = useState("");
 
   const fetchPromos = async () => {
     setLoading(true);
@@ -49,6 +50,7 @@ export default function PromosTab({ showNotification }: { showNotification: (msg
         discountType,
         discountValue: Number(discountValue),
         usageLimit: usageLimit ? Number(usageLimit) : 0,
+        cashbackCoins: cashbackCoins ? Number(cashbackCoins) : 0,
       };
 
       const res = await fetch("/api/admin/promos", {
@@ -65,6 +67,7 @@ export default function PromosTab({ showNotification }: { showNotification: (msg
       setCode("");
       setDiscountValue("");
       setUsageLimit("");
+      setCashbackCoins("");
       fetchPromos();
     } catch (err: any) {
       showNotification(err.message, "error");
@@ -121,6 +124,7 @@ export default function PromosTab({ showNotification }: { showNotification: (msg
             <tr>
               <th className="px-4 py-3.5">Code</th>
               <th className="px-4 py-3.5">Discount</th>
+              <th className="px-4 py-3.5">Cashback</th>
               <th className="px-4 py-3.5">Status</th>
               <th className="px-4 py-3.5">Usage</th>
               <th className="px-4 py-3.5 text-right">Actions</th>
@@ -129,11 +133,11 @@ export default function PromosTab({ showNotification }: { showNotification: (msg
           <tbody className="divide-y divide-white/5">
             {loading ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-white/40">Loading promos...</td>
+                <td colSpan={6} className="py-12 text-center text-white/40">Loading promos...</td>
               </tr>
             ) : promos.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-white/40">No active promos.</td>
+                <td colSpan={6} className="py-12 text-center text-white/40">No active promos.</td>
               </tr>
             ) : (
               promos.map((promo) => (
@@ -141,6 +145,9 @@ export default function PromosTab({ showNotification }: { showNotification: (msg
                   <td className="px-4 py-4 whitespace-nowrap font-bold text-white tracking-widest">{promo.code}</td>
                   <td className="px-4 py-4 text-emerald-400">
                     {promo.discountType === 'percentage' ? `${promo.discountValue}% OFF` : `₹${promo.discountValue} OFF`}
+                  </td>
+                  <td className="px-4 py-4 text-blue-400 font-bold">
+                    {promo.cashbackCoins > 0 ? `${promo.cashbackCoins} Coins` : "-"}
                   </td>
                   <td className="px-4 py-4">
                     <button 
@@ -218,15 +225,27 @@ export default function PromosTab({ showNotification }: { showNotification: (msg
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-1">Usage Limit (Optional)</label>
-                <input
-                  type="number"
-                  value={usageLimit}
-                  onChange={(e) => setUsageLimit(e.target.value)}
-                  placeholder="0 for unlimited"
-                  className="w-full border border-white/20 bg-black px-3 py-2 text-white focus:border-white focus:outline-none"
-                />
+              <div className="flex gap-4">
+                <div className="w-1/2">
+                  <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-1">Usage Limit (Optional)</label>
+                  <input
+                    type="number"
+                    value={usageLimit}
+                    onChange={(e) => setUsageLimit(e.target.value)}
+                    placeholder="0 for unlimited"
+                    className="w-full border border-white/20 bg-black px-3 py-2 text-white focus:border-white focus:outline-none"
+                  />
+                </div>
+                <div className="w-1/2">
+                  <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-1">Cashback Coins</label>
+                  <input
+                    type="number"
+                    value={cashbackCoins}
+                    onChange={(e) => setCashbackCoins(e.target.value)}
+                    placeholder="0"
+                    className="w-full border border-white/20 bg-black px-3 py-2 text-white focus:border-white focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div className="pt-4">
