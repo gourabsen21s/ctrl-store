@@ -574,13 +574,19 @@ export default function AdminDashboard() {
       setIsModalOpen(false);
       showNotification(
         editingHandle
-          ? `Product updated! Stock saved as ${data.product?.stock ?? payload.stock}`
+          ? `Product updated! Stock: ${data.product?.stock ?? payload.stock}`
           : "New product created and live!"
       );
-      startTransition(() => {
-        fetchProducts(currentPage, search, selectedCategory);
-        router.refresh();
-      });
+
+      // For new products, refetch to get the new item in the list.
+      // For edits, we already patched setProducts above from the server response —
+      // refetching immediately risks a race condition where a fast GET returns the
+      // pre-write snapshot from MongoDB's read replica, overwriting our update.
+      if (!editingHandle) {
+        startTransition(() => {
+          fetchProducts(currentPage, search, selectedCategory);
+        });
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Submission failed";
       setFormError(msg);
