@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BRAND, TAGLINE_A, TAGLINE_B, YEAR_MARK, BLURB } from "@/lib/site";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 const COLUMNS: { heading: string; links: string[] }[] = [
   { heading: "Studio", links: ["Work", "Services", "About", "Careers"] },
@@ -30,6 +31,9 @@ export default function Footer() {
       <div className="mt-[8rem] mb-4 md:mt-[16rem]">
         <p className="max-w-[52ch] tracking-tight text-balance md:text-2xl">{BLURB}</p>
       </div>
+
+      {/* VIP Drop & Newsletter Waitlist */}
+      <NewsletterSignup />
 
       <hr className="mb-6 h-[2px] w-full border-0 bg-current" />
 

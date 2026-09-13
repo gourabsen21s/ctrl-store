@@ -53,6 +53,11 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
+  // Active Tab: "products" | "subscribers"
+  const [activeTab, setActiveTab] = useState<"products" | "subscribers">("products");
+  const [subscribers, setSubscribers] = useState<{ _id: string; email: string; status: string; createdAt: string }[]>([]);
+  const [subscribersLoading, setSubscribersLoading] = useState(false);
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingHandle, setEditingHandle] = useState<string | null>(null);
@@ -123,9 +128,50 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchSubscribers = async () => {
+    setSubscribersLoading(true);
+    try {
+      const res = await fetch("/api/newsletter");
+      if (!res.ok) throw new Error("Failed to load subscribers");
+      const data = await res.json();
+      setSubscribers(data.subscribers || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubscribersLoading(false);
+    }
+  };
+
+  const exportSubscribersCsv = () => {
+    if (subscribers.length === 0) {
+      showNotification("No subscribers to export", "error");
+      return;
+    }
+    const headers = "Email,Status,Joined Date\n";
+    const rows = subscribers
+      .map(
+        (s) =>
+          `"${s.email}","${s.status}","${new Date(s.createdAt).toLocaleDateString()}"`
+      )
+      .join("\n");
+    const blob = new Blob([headers + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute(
+      "download",
+      `ctrl-vip-subscribers-${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showNotification("Exported subscribers CSV!");
+  };
+
   useEffect(() => {
     if (!sessionLoading) {
       fetchProducts(currentPage, search, selectedCategory);
+      fetchSubscribers();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionLoading, currentPage, selectedCategory]);
@@ -340,19 +386,31 @@ export default function AdminDashboard() {
       {/* Header & Quick stats */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center border-b border-white/10 pb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight uppercase">Products Catalog</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight uppercase">
+            {activeTab === "products" ? "Products Catalog" : "VIP Drop Waitlist"}
+          </h1>
           <p className="mt-1 text-xs font-mono text-white/50">
-            Authenticated as <span className="text-white font-semibold">{adminUser}</span> • {total} Total items
+            Authenticated as <span className="text-white font-semibold">{adminUser}</span> •{" "}
+            {activeTab === "products" ? `${total} Total items` : `${subscribers.length} VIP Subscribers`}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={openCreateModal}
-            className="flex items-center gap-2 bg-white px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:bg-neutral-200 active:scale-95"
-          >
-            <span>+ Add Product</span>
-          </button>
+          {activeTab === "products" ? (
+            <button
+              onClick={openCreateModal}
+              className="flex items-center gap-2 bg-white px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:bg-neutral-200 active:scale-95"
+            >
+              <span>+ Add Product</span>
+            </button>
+          ) : (
+            <button
+              onClick={exportSubscribersCsv}
+              className="flex items-center gap-2 bg-white px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:bg-neutral-200 active:scale-95"
+            >
+              <span>↓ Export CSV</span>
+            </button>
+          )}
           <button
             onClick={handleLogout}
             className="border border-white/20 px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-white/70 transition-colors hover:border-white hover:text-white"
@@ -362,190 +420,285 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Category & Search Toolbar */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        {/* Category Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 border border-white/10 p-1 bg-[#141414]">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => {
-                setSelectedCategory(cat);
-                setCurrentPage(1);
-              }}
-              className={`px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors ${
-                selectedCategory === cat
-                  ? "bg-white text-black font-bold"
-                  : "text-white/60 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Search input */}
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by title, color, tag..."
-            className="w-full sm:w-64 border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white placeholder-white/30 focus:border-white focus:outline-none"
-          />
-          <button
-            type="submit"
-            className="border border-white/20 bg-[#1f1f1f] px-4 py-2 text-xs font-mono uppercase tracking-wider text-white hover:bg-white/10"
-          >
-            Search
-          </button>
-          {search && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                fetchProducts(1, "", selectedCategory);
-              }}
-              className="text-xs font-mono text-white/50 hover:text-white"
-            >
-              Clear
-            </button>
-          )}
-        </form>
+      {/* Tabs Navigation */}
+      <div className="flex items-center gap-2 border-b border-white/10 pb-2 font-mono text-xs uppercase">
+        <button
+          onClick={() => setActiveTab("products")}
+          className={`px-4 py-2 border-b-2 transition-colors ${
+            activeTab === "products"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          Products ({total})
+        </button>
+        <button
+          onClick={() => setActiveTab("subscribers")}
+          className={`px-4 py-2 border-b-2 transition-colors flex items-center gap-2 ${
+            activeTab === "subscribers"
+              ? "border-white text-white font-bold"
+              : "border-transparent text-white/50 hover:text-white"
+          }`}
+        >
+          <span>VIP Drop Waitlist ({subscribers.length})</span>
+          {subscribers.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
+        </button>
       </div>
 
-      {/* Products Table */}
-      <div className="overflow-x-auto border border-white/10 bg-[#121212]">
-        <table className="w-full text-left text-xs font-mono">
-          <thead className="border-b border-white/10 bg-black/40 text-white/50 uppercase tracking-wider">
-            <tr>
-              <th className="px-4 py-3.5">Item</th>
-              <th className="px-4 py-3.5">Category</th>
-              <th className="px-4 py-3.5">Price</th>
-              <th className="px-4 py-3.5">Color & Sizes</th>
-              <th className="px-4 py-3.5">Crop Aspect</th>
-              <th className="px-4 py-3.5 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="py-12 text-center text-white/40 font-mono">
-                  Loading catalogue items...
-                </td>
-              </tr>
-            ) : products.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="py-12 text-center text-white/40 font-mono">
-                  No products found. Click &quot;+ Add Product&quot; to create your first item!
-                </td>
-              </tr>
-            ) : (
-              products.map((product) => (
-                <tr key={product.handle} className="transition-colors hover:bg-white/[0.02]">
-                  {/* Item Image + Details */}
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="relative h-12 w-10 shrink-0 overflow-hidden bg-white/5 border border-white/10">
-                        {product.frontImage ? (
-                          <Image
-                            src={product.frontImage}
-                            alt={product.title}
-                            fill
-                            sizes="40px"
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-[8px] text-white/40">
-                            NO IMG
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <Link
-                          href={`/product/${product.handle}`}
-                          target="_blank"
-                          className="font-bold text-white hover:underline underline-offset-4 flex items-center gap-1"
-                        >
-                          <span>{product.title}</span>
-                          <span className="text-[10px] text-white/40">↗</span>
-                        </Link>
-                        <p className="text-[10px] text-white/40">{product.handle}</p>
-                      </div>
-                    </div>
-                  </td>
+      {activeTab === "products" ? (
+        <>
+          {/* Category & Search Toolbar */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            {/* Category Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 border border-white/10 p-1 bg-[#141414]">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    setSelectedCategory(cat);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-3 py-1.5 text-xs font-mono uppercase tracking-wider transition-colors ${
+                    selectedCategory === cat
+                      ? "bg-white text-black font-bold"
+                      : "text-white/60 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
 
-                  {/* Category */}
-                  <td className="px-4 py-3">
-                    <span className="inline-block px-2 py-0.5 border border-white/20 text-[10px] uppercase">
-                      {product.category}
-                    </span>
-                  </td>
+            {/* Search input */}
+            <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by title, color, tag..."
+                className="w-full sm:w-64 border border-white/20 bg-black/60 px-3 py-2 text-xs font-mono text-white placeholder-white/30 focus:border-white focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="border border-white/20 bg-[#1f1f1f] px-4 py-2 text-xs font-mono uppercase tracking-wider text-white hover:bg-white/10"
+              >
+                Search
+              </button>
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    fetchProducts(1, "", selectedCategory);
+                  }}
+                  className="text-xs font-mono text-white/50 hover:text-white"
+                >
+                  Clear
+                </button>
+              )}
+            </form>
+          </div>
 
-                  {/* Price */}
-                  <td className="px-4 py-3 font-bold text-white">{money(product.price)}</td>
-
-                  {/* Color & Sizes */}
-                  <td className="px-4 py-3">
-                    <p className="text-white/80">{product.color}</p>
-                    <p className="text-[10px] text-white/40 truncate max-w-[150px]">
-                      {product.sizes?.join(", ") || "—"}
-                    </p>
-                  </td>
-
-                  {/* Aspect */}
-                  <td className="px-4 py-3">
-                    <span className="text-[10px] uppercase text-white/60 font-mono">
-                      {product.aspect}
-                    </span>
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => openEditModal(product)}
-                        className="px-2.5 py-1 border border-white/20 text-white hover:bg-white hover:text-black transition-colors"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => setDeleteTarget(product)}
-                        className="px-2.5 py-1 border border-red/40 text-red hover:bg-red hover:text-white transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
+          {/* Products Table */}
+          <div className="overflow-x-auto border border-white/10 bg-[#121212]">
+            <table className="w-full text-left text-xs font-mono">
+              <thead className="border-b border-white/10 bg-black/40 text-white/50 uppercase tracking-wider">
+                <tr>
+                  <th className="px-4 py-3.5">Item</th>
+                  <th className="px-4 py-3.5">Category</th>
+                  <th className="px-4 py-3.5">Price</th>
+                  <th className="px-4 py-3.5">Color & Sizes</th>
+                  <th className="px-4 py-3.5">Crop Aspect</th>
+                  <th className="px-4 py-3.5 text-right">Actions</th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-white/40 font-mono">
+                      Loading catalogue items...
+                    </td>
+                  </tr>
+                ) : products.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-white/40 font-mono">
+                      No products found. Click &quot;+ Add Product&quot; to create your first item!
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((product) => (
+                    <tr key={product.handle} className="transition-colors hover:bg-white/[0.02]">
+                      {/* Item Image + Details */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="relative h-12 w-10 shrink-0 overflow-hidden bg-white/5 border border-white/10">
+                            {product.frontImage ? (
+                              <Image
+                                src={product.frontImage}
+                                alt={product.title}
+                                fill
+                                sizes="40px"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[8px] text-white/40">
+                                NO IMG
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <Link
+                              href={`/product/${product.handle}`}
+                              target="_blank"
+                              className="font-bold text-white hover:underline underline-offset-4 flex items-center gap-1"
+                            >
+                              <span>{product.title}</span>
+                              <span className="text-[10px] text-white/40">↗</span>
+                            </Link>
+                            <p className="text-[10px] text-white/40">{product.handle}</p>
+                          </div>
+                        </div>
+                      </td>
 
-      {/* Pagination controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-white/10 pt-4 text-xs font-mono">
-          <p className="text-white/50">
-            Page <span className="text-white">{currentPage}</span> of{" "}
-            <span className="text-white">{totalPages}</span> ({total} items)
-          </p>
-          <div className="flex items-center gap-2">
+                      {/* Category */}
+                      <td className="px-4 py-3">
+                        <span className="inline-block px-2 py-0.5 border border-white/20 text-[10px] uppercase">
+                          {product.category}
+                        </span>
+                      </td>
+
+                      {/* Price */}
+                      <td className="px-4 py-3 font-bold text-white">{money(product.price)}</td>
+
+                      {/* Color & Sizes */}
+                      <td className="px-4 py-3">
+                        <p className="text-white/80">{product.color}</p>
+                        <p className="text-[10px] text-white/40 truncate max-w-[150px]">
+                          {product.sizes?.join(", ") || "—"}
+                        </p>
+                      </td>
+
+                      {/* Aspect */}
+                      <td className="px-4 py-3">
+                        <span className="text-[10px] uppercase text-white/60 font-mono">
+                          {product.aspect}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => openEditModal(product)}
+                            className="px-2.5 py-1 border border-white/20 text-white hover:bg-white hover:text-black transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(product)}
+                            className="px-2.5 py-1 border border-red/40 text-red hover:bg-red hover:text-white transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-white/10 pt-4 text-xs font-mono">
+              <p className="text-white/50">
+                Page <span className="text-white">{currentPage}</span> of{" "}
+                <span className="text-white">{totalPages}</span> ({total} items)
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1 || loading}
+                  className="border border-white/20 px-3 py-1.5 uppercase hover:bg-white/10 disabled:opacity-30"
+                >
+                  ← Prev
+                </button>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages || loading}
+                  className="border border-white/20 px-3 py-1.5 uppercase hover:bg-white/10 disabled:opacity-30"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        /* SUBSCRIBERS / VIP WAITLIST VIEW */
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-mono text-white/60">
+              Customers who joined the VIP drop waitlist from the storefront.
+            </p>
             <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage <= 1 || loading}
-              className="border border-white/20 px-3 py-1.5 uppercase hover:bg-white/10 disabled:opacity-30"
+              onClick={fetchSubscribers}
+              disabled={subscribersLoading}
+              className="px-3 py-1.5 border border-white/20 text-xs font-mono uppercase hover:bg-white/10"
             >
-              ← Prev
+              {subscribersLoading ? "Refreshing..." : "↻ Refresh List"}
             </button>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage >= totalPages || loading}
-              className="border border-white/20 px-3 py-1.5 uppercase hover:bg-white/10 disabled:opacity-30"
-            >
-              Next →
-            </button>
+          </div>
+
+          <div className="overflow-x-auto border border-white/10 bg-[#121212]">
+            <table className="w-full text-left text-xs font-mono">
+              <thead className="border-b border-white/10 bg-black/40 text-white/50 uppercase tracking-wider">
+                <tr>
+                  <th className="px-4 py-3.5">#</th>
+                  <th className="px-4 py-3.5">Email Address</th>
+                  <th className="px-4 py-3.5">Status</th>
+                  <th className="px-4 py-3.5 text-right">Joined Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {subscribersLoading ? (
+                  <tr>
+                    <td colSpan={4} className="py-12 text-center text-white/40 font-mono">
+                      Loading VIP waitlist...
+                    </td>
+                  </tr>
+                ) : subscribers.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-12 text-center text-white/40 font-mono">
+                      No subscribers yet. Signups through the footer will appear here!
+                    </td>
+                  </tr>
+                ) : (
+                  subscribers.map((s, idx) => (
+                    <tr key={s._id} className="transition-colors hover:bg-white/[0.02]">
+                      <td className="px-4 py-3 text-white/40">{idx + 1}</td>
+                      <td className="px-4 py-3 font-bold text-white tracking-wide">
+                        {s.email}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 text-[10px] tracking-wider uppercase">
+                          <span className="h-1 w-1 rounded-full bg-emerald-400" />
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-white/60">
+                        {new Date(s.createdAt).toLocaleDateString("en-IN", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
