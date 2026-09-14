@@ -79,11 +79,13 @@ export default function SplitWordmark({
         relative.push(glyphs);
       });
 
-      // Widen past the longest line so alignment has somewhere to go.
-      const boxW = Math.max(...widths) / SPREAD;
+      const isSingleLine = BRAND_LINES.length === 1;
+      const suffixPad = showSuffix ? Math.round(CAP * 0.22) : 0;
+      // If single line, fit exactly edge-to-edge; otherwise spread across multi-tier box.
+      const boxW = isSingleLine ? widths[0] + suffixPad : Math.max(...widths) / SPREAD;
       // Shift each line into place now that the box width is known.
       const lines = relative.map((glyphs, li) => {
-        const slack = boxW - widths[li];
+        const slack = boxW - widths[li] - (isSingleLine ? suffixPad : 0);
         const offset =
           BRAND_LINES[li].align === "start" ? 0 : BRAND_LINES[li].align === "middle" ? slack / 2 : slack;
         return glyphs.map((g) => ({ ...g, x: g.x + offset }));
@@ -93,7 +95,7 @@ export default function SplitWordmark({
     } catch {
       setM(null); // keep the plain laid-out lines
     }
-  }, []);
+  }, [showSuffix]);
 
   // Runs after the glyphs commit, so callers always receive live nodes.
   useLayoutEffect(() => {
@@ -103,7 +105,8 @@ export default function SplitWordmark({
   }, [m, onGlyphs]);
 
   // Before measuring, the box is provisional and the lines sit at x=0.
-  const boxW = m?.boxW ?? (FONT * 4) / SPREAD;
+  const isSingleLine = BRAND_LINES.length === 1;
+  const boxW = m?.boxW ?? (isSingleLine ? FONT * 3.5 : (FONT * 4) / SPREAD);
 
   return (
     <div className={className}>
@@ -174,10 +177,10 @@ export default function SplitWordmark({
         {showSuffix && m && (
           <text
             x={boxW}
-            y={baselineFor(BRAND_LINES.length - 1) + Math.round(CAP * 0.22)}
+            y={baselineFor(BRAND_LINES.length - 1)}
             textAnchor="end"
-            fontWeight={700}
-            fontSize={Math.round(CAP * 0.17)}
+            fontWeight={900}
+            fontSize={Math.round(CAP * 0.16)}
             fill="currentColor"
             style={font}
           >

@@ -45,7 +45,6 @@ export default function DropCountdownBanner({ product }: DropCountdownBannerProp
     setMounted(true);
     if (!product?.dropDate) return;
 
-    // Immediately compute initial state
     setTimeLeft(getTimeRemaining(product.dropDate));
 
     const interval = setInterval(() => {
@@ -60,136 +59,116 @@ export default function DropCountdownBanner({ product }: DropCountdownBannerProp
     return null;
   }
 
-  // If not mounted yet (SSR), render placeholder or initial time to avoid hydration mismatch
   const isLive = timeLeft ? timeLeft.total <= 0 : false;
 
   return (
-    <section className="relative overflow-hidden border-y border-amber-500/30 bg-gradient-to-b from-[#110e08] via-[#0a0805] to-[#050505] text-white my-8">
-      {/* Subtle background glow effect */}
-      <div
-        className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-48 w-3/4 max-w-4xl bg-amber-500/10 blur-[100px]"
-        aria-hidden="true"
-      />
-
-      <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
-          {/* Left Column: Drop Badges & Product Teaser */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left w-full lg:w-auto">
-            <div className="relative h-24 w-20 shrink-0 overflow-hidden border border-amber-500/40 bg-black/60 shadow-xl group">
-              <Image
-                src={imageFor(product, "front")}
-                alt={product.title}
-                fill
-                sizes="100px"
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-mono uppercase tracking-widest text-amber-300">
-                <span className="relative flex h-2 w-2">
-                  <span
-                    className={`absolute inline-flex h-full w-full rounded-full ${
-                      isLive ? "bg-emerald-400 animate-ping" : "bg-amber-400 animate-ping"
-                    } opacity-75`}
-                  />
-                  <span
-                    className={`relative inline-flex h-2 w-2 rounded-full ${
-                      isLive ? "bg-emerald-500" : "bg-amber-500"
-                    }`}
-                  />
-                </span>
-                <span>{isLive ? "DROP IS LIVE NOW" : "LIMITED EDITION DROP"}</span>
-              </div>
-
-              <h3 className="text-xl sm:text-2xl font-[900] tracking-tight uppercase">
-                {product.title}
-              </h3>
-
-              <div className="flex items-center justify-center sm:justify-start gap-3 text-xs font-mono text-white/70">
-                <span>{product.category}</span>
-                <span>•</span>
-                <span className="font-bold text-white">{money(product.price)}</span>
-                <span>•</span>
-                <span suppressHydrationWarning className="text-amber-400/90">
-                  {isLive ? "Unlocked" : `Launch: ${new Date(product.dropDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                </span>
-              </div>
-            </div>
+    <section className="border-b border-current/20 pb-8 mb-12 overflow-hidden">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        {/* Left: Minimalist Drop Specs & Garment Plate */}
+        <div className="flex items-center gap-5 sm:gap-6">
+          <div className="relative h-20 w-16 sm:h-24 sm:w-20 shrink-0 overflow-hidden border border-current/20">
+            <Image
+              src={imageFor(product, "front")}
+              alt={product.title}
+              fill
+              sizes="100px"
+              className="object-cover"
+            />
           </div>
 
-          {/* Right Column: High-Impact Countdown Display or Live CTA */}
-          <div className="flex flex-col sm:flex-row items-center gap-6 w-full lg:w-auto justify-center lg:justify-end">
-            {!isLive ? (
-              <div className="flex items-center gap-2 sm:gap-3 text-center font-mono">
-                {/* DAYS */}
-                <div className="flex flex-col items-center justify-center min-w-[58px] sm:min-w-[68px] rounded border border-amber-500/30 bg-black/60 px-2.5 py-2 backdrop-blur-sm shadow-inner">
-                  <span className="text-2xl sm:text-3xl font-[900] tabular-nums tracking-tight text-white">
-                    {mounted && timeLeft ? String(timeLeft.days).padStart(2, "0") : "00"}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-wider text-amber-400/70 font-semibold">
-                    Days
-                  </span>
-                </div>
+          <div>
+            <div className="flex items-center gap-2 mb-1.5 text-xs font-mono uppercase tracking-widest text-red">
+              <span className="h-2 w-2 rounded-full bg-red animate-pulse" />
+              <span>{isLive ? "DROP IS LIVE" : "SCHEDULED RELEASE"}</span>
+            </div>
 
-                <span className="text-xl font-bold text-amber-500/60 pb-3 select-none">:</span>
+            <h3 className="text-2xl sm:text-3xl font-[900] tracking-tighter uppercase leading-none">
+              {product.title}
+            </h3>
 
-                {/* HOURS */}
-                <div className="flex flex-col items-center justify-center min-w-[58px] sm:min-w-[68px] rounded border border-amber-500/30 bg-black/60 px-2.5 py-2 backdrop-blur-sm shadow-inner">
-                  <span className="text-2xl sm:text-3xl font-[900] tabular-nums tracking-tight text-white">
-                    {mounted && timeLeft ? String(timeLeft.hours).padStart(2, "0") : "00"}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-wider text-amber-400/70 font-semibold">
-                    Hours
-                  </span>
-                </div>
-
-                <span className="text-xl font-bold text-amber-500/60 pb-3 select-none">:</span>
-
-                {/* MINUTES */}
-                <div className="flex flex-col items-center justify-center min-w-[58px] sm:min-w-[68px] rounded border border-amber-500/30 bg-black/60 px-2.5 py-2 backdrop-blur-sm shadow-inner">
-                  <span className="text-2xl sm:text-3xl font-[900] tabular-nums tracking-tight text-white">
-                    {mounted && timeLeft ? String(timeLeft.minutes).padStart(2, "0") : "00"}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-wider text-amber-400/70 font-semibold">
-                    Mins
-                  </span>
-                </div>
-
-                <span className="text-xl font-bold text-amber-500/60 pb-3 select-none">:</span>
-
-                {/* SECONDS */}
-                <div className="flex flex-col items-center justify-center min-w-[58px] sm:min-w-[68px] rounded border border-amber-500/50 bg-black/70 px-2.5 py-2 backdrop-blur-sm shadow-inner ring-1 ring-amber-500/20">
-                  <span className="text-2xl sm:text-3xl font-[900] tabular-nums tracking-tight text-amber-400 animate-pulse">
-                    {mounted && timeLeft ? String(timeLeft.seconds).padStart(2, "0") : "00"}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-wider text-amber-400 font-bold">
-                    Secs
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3 px-4 py-2 border border-emerald-500/50 bg-emerald-500/10 text-emerald-400 font-mono text-xs uppercase font-bold tracking-widest animate-bounce">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                BAG UNLOCKED • READY TO ORDER
-              </div>
-            )}
-
-            {/* Direct CTA Button */}
-            <Link
-              href={`/product/${product.handle}`}
-              data-cursor
-              className={`inline-flex items-center justify-center gap-2 whitespace-nowrap px-6 py-3.5 text-xs font-mono font-bold uppercase tracking-widest transition-all duration-300 ${
-                isLive
-                  ? "bg-white text-black hover:bg-neutral-200 shadow-[0_0_25px_rgba(255,255,255,0.4)]"
-                  : "border border-amber-400 bg-amber-500/10 text-amber-300 hover:bg-amber-400 hover:text-black shadow-[0_0_15px_rgba(245,158,11,0.2)]"
-              }`}
-            >
-              <span>{isLive ? "SHOP THE DROP NOW" : "PREVIEW DROP"}</span>
-              <span>↗</span>
-            </Link>
+            <div className="flex items-center gap-3 text-xs font-mono opacity-60 mt-2">
+              <span>{product.category}</span>
+              <span>/</span>
+              <span className="font-bold text-current">{money(product.price)}</span>
+              <span>/</span>
+              <span suppressHydrationWarning>
+                {isLive
+                  ? "AVAILABLE NOW"
+                  : `LAUNCH: ${new Date(product.dropDate).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}`}
+              </span>
+            </div>
           </div>
+        </div>
+
+        {/* Right: Pure Typographic Tabular Countdown */}
+        <div className="flex flex-wrap items-center gap-6 sm:gap-8 justify-between lg:justify-end">
+          {!isLive ? (
+            <div className="flex items-center gap-3 sm:gap-4 font-mono">
+              {/* DAYS */}
+              <div className="text-center">
+                <span className="text-3xl sm:text-4xl font-[900] tabular-nums tracking-tight block">
+                  {mounted && timeLeft ? String(timeLeft.days).padStart(2, "0") : "00"}
+                </span>
+                <span className="text-[9px] uppercase tracking-widest opacity-50 font-bold block">
+                  DAYS
+                </span>
+              </div>
+
+              <span className="text-2xl font-bold opacity-30 select-none pb-3">:</span>
+
+              {/* HOURS */}
+              <div className="text-center">
+                <span className="text-3xl sm:text-4xl font-[900] tabular-nums tracking-tight block">
+                  {mounted && timeLeft ? String(timeLeft.hours).padStart(2, "0") : "00"}
+                </span>
+                <span className="text-[9px] uppercase tracking-widest opacity-50 font-bold block">
+                  HRS
+                </span>
+              </div>
+
+              <span className="text-2xl font-bold opacity-30 select-none pb-3">:</span>
+
+              {/* MINUTES */}
+              <div className="text-center">
+                <span className="text-3xl sm:text-4xl font-[900] tabular-nums tracking-tight block">
+                  {mounted && timeLeft ? String(timeLeft.minutes).padStart(2, "0") : "00"}
+                </span>
+                <span className="text-[9px] uppercase tracking-widest opacity-50 font-bold block">
+                  MIN
+                </span>
+              </div>
+
+              <span className="text-2xl font-bold opacity-30 select-none pb-3">:</span>
+
+              {/* SECONDS */}
+              <div className="text-center">
+                <span className="text-3xl sm:text-4xl font-[900] tabular-nums tracking-tight text-red block">
+                  {mounted && timeLeft ? String(timeLeft.seconds).padStart(2, "0") : "00"}
+                </span>
+                <span className="text-[9px] uppercase tracking-widest opacity-60 font-bold block text-red">
+                  SEC
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 border border-current px-4 py-2 text-red font-mono text-xs uppercase font-bold tracking-widest">
+              <span className="h-2 w-2 rounded-full bg-red animate-pulse" />
+              <span>DROP LIVE NOW</span>
+            </div>
+          )}
+
+          {/* Direct CTA Button */}
+          <Link
+            href={`/product/${product.handle}`}
+            data-cursor
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap border border-current px-6 py-3 font-mono text-xs font-bold uppercase tracking-widest transition-colors hover:bg-current hover:text-cream dark:hover:text-black"
+          >
+            <span>{isLive ? "SHOP NOW" : "PREVIEW DROP"}</span>
+            <span>→</span>
+          </Link>
         </div>
       </div>
     </section>

@@ -6,7 +6,6 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, registerGsap, T, prefersReducedMotion } from "@/lib/motion";
 import { ASPECT_CLASS, imageFor, money, type Product } from "@/lib/products";
-import { useWishlist } from "@/components/providers/WishlistProvider";
 
 /**
  * Two motions, deliberately split by cost:
@@ -18,9 +17,7 @@ import { useWishlist } from "@/components/providers/WishlistProvider";
  */
 export default function ProductCard({ product }: { product: Product }) {
   const root = useRef<HTMLAnchorElement>(null);
-  const crop = ASPECT_CLASS[product.aspect];
-  const { isInWishlist, toggleWishlist } = useWishlist();
-  const isSaved = isInWishlist(product.handle);
+  const crop = (product.aspect && ASPECT_CLASS[product.aspect]) || "aspect-large";
 
   useGSAP(
     () => {
@@ -31,7 +28,6 @@ export default function ProductCard({ product }: { product: Product }) {
       const front = root.current?.querySelector("[data-image='front']");
       if (!curtain || !front) return;
 
-      // If card is already in the viewport on initial page render, reveal immediately
       const rect = root.current?.getBoundingClientRect();
       const inView = rect ? rect.top < window.innerHeight : false;
 
@@ -75,7 +71,7 @@ export default function ProductCard({ product }: { product: Product }) {
       ref={root}
       href={`/product/${product.handle}`}
       data-product
-      data-cursor="text"
+      data-cursor="view"
       className="group block"
     >
       <div className="relative overflow-hidden">
@@ -109,68 +105,16 @@ export default function ProductCard({ product }: { product: Product }) {
           aria-hidden
           className="pointer-events-none absolute inset-0 h-full w-full bg-curtain dark:bg-neutral-800"
         />
-
-        {/* Wishlist Heart Button */}
-        <button
-          type="button"
-          data-cursor
-          aria-label={isSaved ? `Remove ${product.title} from wishlist` : `Save ${product.title} to wishlist`}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleWishlist(product);
-          }}
-          className={`absolute top-3 left-3 z-20 flex h-8 w-8 items-center justify-center border transition-all duration-200 backdrop-blur-sm ${
-            isSaved
-              ? "border-red bg-red text-white scale-110 shadow-lg"
-              : "border-white/20 bg-black/60 text-white/80 hover:border-white hover:text-white hover:scale-105"
-          }`}
-        >
-          <svg
-            className={`h-4 w-4 transition-transform ${isSaved ? "fill-current" : "fill-none stroke-current stroke-2"}`}
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-            />
-          </svg>
-        </button>
-
-        {/* Drop & Stock status badges */}
-        {product.dropDate && new Date(product.dropDate) > new Date() ? (
-          <div className="absolute top-3 right-3 z-10 bg-black/85 backdrop-blur-sm border border-amber-400 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-amber-300 font-bold flex items-center gap-1.5 shadow-[0_0_12px_rgba(245,158,11,0.3)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
-            Upcoming Drop
-          </div>
-        ) : product.stock === 0 ? (
-          <div className="absolute top-3 right-3 z-10 bg-black/80 backdrop-blur-sm border border-red-500/60 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-red-400">
-            Sold Out
-          </div>
-        ) : product.stock !== undefined && product.stock > 0 && product.stock <= 5 ? (
-          <div className="absolute top-3 right-3 z-10 bg-black/80 backdrop-blur-sm border border-amber-500/60 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-amber-400 animate-pulse">
-            Only {product.stock} left
-          </div>
-        ) : null}
       </div>
 
       <div className="mt-3 flex flex-col justify-between gap-2 text-lg leading-5 md:flex-row">
-        <p className={product.stock === 0 ? "text-neutral-500" : ""}>{product.title}</p>
-        <p className={product.stock === 0 ? "text-neutral-500" : ""}>{money(product.price)}</p>
+        <p className={product.stock === 0 ? "opacity-50" : ""}>{product.title}</p>
+        <p className={product.stock === 0 ? "opacity-50" : ""}>{money(product.price)}</p>
       </div>
-      <div className="mt-[6px] flex items-center justify-between text-[11px] uppercase">
-        <div className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-current" />
-          <span>{product.category}</span>
-        </div>
-        {product.dropDate && new Date(product.dropDate) > new Date() ? (
-          <span className="font-mono text-amber-400 tracking-wider font-semibold">⚡ Drop Scheduled</span>
-        ) : product.stock === 0 ? (
-          <span className="font-mono text-red-500 tracking-wider font-semibold">Sold Out</span>
-        ) : product.stock !== undefined && product.stock <= 5 ? (
-          <span className="font-mono text-amber-500 tracking-wider font-semibold">⚡ Low Stock</span>
-        ) : null}
+
+      <div className="mt-[6px] flex items-center gap-1 text-[11px] uppercase">
+        <span className="h-2 w-2 rounded-full bg-current" />
+        <span>{product.category}</span>
       </div>
     </Link>
   );

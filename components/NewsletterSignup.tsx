@@ -44,44 +44,43 @@ export default function NewsletterSignup() {
   };
 
   return (
-    <div className="border-y border-current/20 py-12 md:py-16 my-16">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+    <div className="border-t border-current/20 pt-16 pb-16 my-12">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
         {/* Editorial Heading */}
         <div className="max-w-xl">
-          <div className="flex items-center gap-2 mb-3 text-xs font-mono uppercase tracking-widest opacity-60">
+          <div className="flex items-center gap-2 mb-3 text-xs font-mono uppercase tracking-widest text-red">
             <span className="h-1.5 w-1.5 rounded-full bg-red animate-pulse" />
-            <span>Exclusive Access</span>
+            <span>EXCLUSIVE ACCESS // DISPATCH ALERTS</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-[900] tracking-tighter leading-none uppercase">
+          <h2 className="text-4xl sm:text-6xl font-[900] tracking-tighter leading-[0.9] uppercase">
             VIP Drop List
           </h2>
-          <p className="mt-3 text-sm md:text-base opacity-70 tracking-tight">
-            Archival releases, limited capsule drops, and private access codes 24 hours before
-            public launch.
+          <p className="mt-4 text-xs sm:text-sm font-mono opacity-60 leading-relaxed max-w-md">
+            Archival releases, limited capsule drops, and private access codes 24 hours before public launch.
           </p>
         </div>
 
-        {/* Minimalist Form */}
-        <div className="w-full md:w-auto md:min-w-[360px] lg:min-w-[420px]">
+        {/* Minimalist Underline Form */}
+        <div className="w-full lg:w-auto lg:min-w-[420px]">
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <div className="flex border border-current/40 focus-within:border-current transition-colors">
+            <div className="flex items-center border-b-2 border-current focus-within:border-red transition-colors pb-1">
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ENTER YOUR EMAIL"
+                placeholder="ENTER EMAIL FOR NOTIFICATIONS"
                 disabled={loading}
                 data-cursor
-                className="w-full bg-transparent px-4 py-3.5 text-xs uppercase font-mono tracking-wider placeholder:text-current/40 focus:outline-none"
+                className="w-full bg-transparent py-3 text-xs uppercase font-mono tracking-widest placeholder:text-current/30 focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={loading}
                 data-cursor
-                className="bg-current text-cream dark:text-black font-mono font-bold text-xs uppercase tracking-widest px-6 py-3.5 shrink-0 transition-opacity hover:opacity-85 disabled:opacity-50"
+                className="border border-current px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-widest hover:bg-current hover:text-cream dark:hover:text-black transition-colors shrink-0 disabled:opacity-50"
               >
-                {loading ? "..." : "Join →"}
+                {loading ? "..." : "JOIN →"}
               </button>
             </div>
 
@@ -90,7 +89,7 @@ export default function NewsletterSignup() {
               <div
                 className={`text-xs font-mono py-2 px-3 border ${
                   status.type === "success"
-                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    ? "border-current/40 bg-current/5 text-current font-bold"
                     : "border-red/50 bg-red/10 text-red"
                 }`}
               >
@@ -99,7 +98,7 @@ export default function NewsletterSignup() {
               </div>
             )}
 
-            <p className="text-[10px] font-mono opacity-50 uppercase tracking-wide">
+            <p className="text-[10px] font-mono opacity-40 uppercase tracking-widest">
               No spam. Strictly secret drops &amp; dispatch alerts.
             </p>
           </form>

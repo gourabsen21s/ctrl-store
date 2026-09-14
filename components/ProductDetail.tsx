@@ -28,26 +28,6 @@ export default function ProductDetail({ product, relatedProducts }: { product: P
   const [added, setAdded] = useState(false);
   const [isExpressOpen, setIsExpressOpen] = useState(false);
 
-  // Live Active Viewers & Recent Orders Social Proof
-  const [viewers, setViewers] = useState(4);
-  const [recentOrders] = useState(() => Math.floor(((product.handle.length * 7) % 9) + 6)); // 6–14 orders
-
-  useEffect(() => {
-    // Initial deterministic viewer count based on handle
-    const initial = ((product.handle.length * 3) % 4) + 3;
-    setViewers(initial);
-
-    // Natural fluctuation every 10-15 seconds
-    const interval = setInterval(() => {
-      setViewers((prev) => {
-        const delta = Math.random() > 0.5 ? 1 : -1;
-        const next = prev + delta;
-        return Math.max(3, Math.min(8, next));
-      });
-    }, 12000);
-
-    return () => clearInterval(interval);
-  }, [product.handle]);
 
   // Track product in recently viewed history
   useEffect(() => {
@@ -204,49 +184,16 @@ export default function ProductDetail({ product, relatedProducts }: { product: P
             </h1>
             <p className="mt-3 text-3xl">{money(product.price)}</p>
 
-            {/* Inventory / Stock Status Indicator */}
-            {isSoldOut ? (
-              <div className="mt-4 inline-flex items-center gap-2 border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-red-500">
-                <span className="h-2 w-2 rounded-full bg-red-500" />
-                <span>Sold Out — Currently out of stock</span>
-              </div>
-            ) : isLowStock ? (
-              <div className="mt-4 inline-flex items-center gap-2 border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-amber-500">
-                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                <span>Limited Drop: Only {product.stock} left in stock</span>
-              </div>
-            ) : (
-              <div className="mt-4 inline-flex items-center gap-2 border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                <span>In Stock ({product.stock ?? 15} units available)</span>
-              </div>
-            )}
-
-            {/* Live Social Proof & Stock Scarcity Badges */}
-            <div className="mt-4 flex flex-col gap-2 border-y border-current/15 py-3 font-mono text-xs">
-              {/* Live Active Viewers */}
-              <div className="flex items-center gap-2 text-current/90">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                </span>
-                <span>
-                  <strong className="font-bold">{viewers} people</strong> viewing this item right now
-                </span>
-              </div>
-
-              {/* Dynamic Size Scarcity Badge */}
-              {!isSoldOut && currentSizeStock <= 3 && (
-                <div className="flex items-center gap-2 text-amber-500 font-bold uppercase tracking-wider text-[11px] animate-fade-in">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                  <span>Only {currentSizeStock} left in size {size} — order soon</span>
-                </div>
-              )}
-
-              {/* Recent Orders Proof */}
-              <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider opacity-60">
-                <span>⚡ High Demand: {recentOrders} orders placed in last 24h</span>
-              </div>
+            {/* Inventory Status */}
+            <div className="mt-4 flex items-center gap-3 border-y border-current/20 py-2.5 font-mono text-xs uppercase tracking-widest">
+              <span className={`h-1.5 w-1.5 rounded-full ${isSoldOut ? "bg-red" : "bg-current"}`} />
+              <span className={isSoldOut ? "text-red font-bold" : "opacity-70"}>
+                {isSoldOut
+                  ? "ARCHIVED // OUT OF PRODUCTION"
+                  : isLowStock
+                  ? `LIMITED RUN // ONLY ${product.stock} PIECES REMAINING`
+                  : `CATALOGUE // ${product.stock ?? 15} PIECES CRAFTED`}
+              </span>
             </div>
 
             <p className="mt-5 max-w-[46ch] text-base">{product.description}</p>
@@ -308,44 +255,41 @@ export default function ProductDetail({ product, relatedProducts }: { product: P
 
             {/* Drop Countdown Banner if Drop is Locked */}
             {isDropLocked && dropTimeLeft && (
-              <div className="my-6 border border-amber-500/40 bg-amber-950/20 p-4 space-y-3">
+              <div className="my-6 border border-current/20 bg-current/[0.03] p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-amber-400">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                    </span>
-                    <span>Upcoming Drop Countdown</span>
+                  <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-red">
+                    <span className="h-1.5 w-1.5 rounded-full bg-red animate-pulse" />
+                    <span>SCHEDULED RELEASE COUNTDOWN</span>
                   </div>
-                  <span suppressHydrationWarning className="text-[10px] font-mono text-amber-400/80">
-                    Target: {new Date(product.dropDate!).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  <span suppressHydrationWarning className="text-[10px] font-mono opacity-50">
+                    TARGET: {new Date(product.dropDate!).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-4 gap-2 text-center font-mono">
-                  <div className="border border-white/10 bg-black/60 p-2">
-                    <span className="block text-xl md:text-2xl font-[900] tabular-nums text-white">
+                  <div className="border border-current/20 bg-current/[0.04] p-2">
+                    <span className="block text-xl md:text-2xl font-[900] tabular-nums text-current">
                       {String(dropTimeLeft.days).padStart(2, "0")}
                     </span>
-                    <span className="text-[9px] uppercase tracking-wider text-white/50">Days</span>
+                    <span className="text-[9px] uppercase tracking-widest opacity-40">DAYS</span>
                   </div>
-                  <div className="border border-white/10 bg-black/60 p-2">
-                    <span className="block text-xl md:text-2xl font-[900] tabular-nums text-white">
+                  <div className="border border-current/20 bg-current/[0.04] p-2">
+                    <span className="block text-xl md:text-2xl font-[900] tabular-nums text-current">
                       {String(dropTimeLeft.hours).padStart(2, "0")}
                     </span>
-                    <span className="text-[9px] uppercase tracking-wider text-white/50">Hours</span>
+                    <span className="text-[9px] uppercase tracking-widest opacity-40">HRS</span>
                   </div>
-                  <div className="border border-white/10 bg-black/60 p-2">
-                    <span className="block text-xl md:text-2xl font-[900] tabular-nums text-white">
+                  <div className="border border-current/20 bg-current/[0.04] p-2">
+                    <span className="block text-xl md:text-2xl font-[900] tabular-nums text-current">
                       {String(dropTimeLeft.minutes).padStart(2, "0")}
                     </span>
-                    <span className="text-[9px] uppercase tracking-wider text-white/50">Mins</span>
+                    <span className="text-[9px] uppercase tracking-widest opacity-40">MIN</span>
                   </div>
-                  <div className="border border-amber-500/40 bg-black/70 p-2 ring-1 ring-amber-500/20">
-                    <span className="block text-xl md:text-2xl font-[900] tabular-nums text-amber-400 animate-pulse">
+                  <div className="border border-current/30 bg-current/[0.08] p-2">
+                    <span className="block text-xl md:text-2xl font-[900] tabular-nums text-red">
                       {String(dropTimeLeft.seconds).padStart(2, "0")}
                     </span>
-                    <span className="text-[9px] uppercase tracking-wider text-amber-400 font-bold">Secs</span>
+                    <span className="text-[9px] uppercase tracking-widest opacity-60 font-bold">SEC</span>
                   </div>
                 </div>
               </div>
@@ -357,17 +301,17 @@ export default function ProductDetail({ product, relatedProducts }: { product: P
                   <button
                     type="button"
                     disabled
-                    className="flex items-center justify-center gap-2 border border-amber-500/40 bg-amber-500/10 px-6 py-4 text-xs font-mono font-bold uppercase tracking-widest text-amber-300 cursor-not-allowed shadow-[0_0_20px_rgba(245,158,11,0.15)]"
+                    className="flex items-center justify-center gap-2 border border-current/30 bg-current/5 px-6 py-4 text-xs font-mono font-bold uppercase tracking-widest opacity-70 cursor-not-allowed"
                   >
-                    <span>🔒 LOCKED UNTIL DROP</span>
+                    <span>SCHEDULED DROP — LOCKED</span>
                     {dropTimeLeft && (
-                      <span className="font-mono text-amber-400">
+                      <span className="font-mono text-red">
                         ({String(dropTimeLeft.hours).padStart(2, "0")}:{String(dropTimeLeft.minutes).padStart(2, "0")}:{String(dropTimeLeft.seconds).padStart(2, "0")})
                       </span>
                     )}
                   </button>
-                  <p className="text-[10px] font-mono text-white/50 text-center sm:text-left">
-                    ⚡ Button will automatically unlock the second clock hits zero
+                  <p className="text-[10px] font-mono opacity-50 text-center sm:text-left">
+                    Automated release upon countdown completion
                   </p>
                 </div>
               ) : !isSoldOut ? (
@@ -390,10 +334,9 @@ export default function ProductDetail({ product, relatedProducts }: { product: P
                     type="button"
                     data-cursor
                     onClick={() => setIsExpressOpen(true)}
-                    className="inline-flex items-center justify-center gap-1.5 border border-current/40 px-4 py-2 text-xs font-mono font-bold uppercase tracking-widest hover:bg-current hover:text-white dark:hover:text-black transition-all"
+                    className="inline-flex items-center justify-center gap-1.5 border border-current/30 px-4 py-2 text-xs font-mono font-bold uppercase tracking-widest hover:bg-current hover:text-white dark:hover:text-black transition-colors"
                   >
-                    <span className="text-amber-500">⚡</span>
-                    <span>1-Click Buy</span>
+                    <span>1-Click Buy →</span>
                   </button>
                 </div>
               ) : (

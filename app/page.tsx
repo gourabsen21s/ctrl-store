@@ -2,9 +2,10 @@ import Hero from "@/components/Hero";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import Preloader from "@/components/Preloader";
-import ReferralBanner from "@/components/ReferralBanner";
-import HomePagination from "@/components/HomePagination";
 import DropCountdownBanner from "@/components/DropCountdownBanner";
+import HomePagination from "@/components/HomePagination";
+import ReferralBanner from "@/components/ReferralBanner";
+import NewsletterSignup from "@/components/NewsletterSignup";
 import { getProducts, getUpcomingDrop } from "@/lib/products-db";
 import Link from "next/link";
 
@@ -73,33 +74,36 @@ export default async function Home({ searchParams }: HomePageProps) {
       <main id="page" data-page="home">
         <Hero />
 
-        {/* Animated Drop Countdown Banner */}
-        <DropCountdownBanner product={upcomingDrop} />
+        <div className="px-4 lg:px-6">
+          {/* Architectural Drop Countdown Banner */}
+          {upcomingDrop && <DropCountdownBanner product={upcomingDrop} />}
 
-        {/* Latest Drops Section Header */}
-        <div className="px-4 lg:px-6 mb-12">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between border-b border-current/20 pb-6">
+          {/* Swiss Editorial Collection Header */}
+          <div className="border-b border-current/20 pb-6 mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
             <div>
-              <div className="flex items-center gap-2 mb-2 text-xs font-mono uppercase tracking-widest opacity-60">
-                <span className="h-2 w-2 rounded-full bg-red animate-pulse" />
-                <span>SIGNATURE CURATION</span>
+              <div className="flex items-center gap-2 mb-2 text-xs font-mono uppercase tracking-widest text-red">
+                <span className="h-1.5 w-1.5 rounded-full bg-red animate-pulse" />
+                <span>01 // SIGNATURE CURATION</span>
               </div>
               <h2 className="text-3xl sm:text-5xl font-[900] tracking-tighter uppercase leading-none">
                 LATEST DROPS
               </h2>
             </div>
-            <Link
-              href="/store"
-              data-cursor
-              className="inline-flex items-center gap-2 border border-current/30 px-5 py-2.5 font-mono text-xs uppercase tracking-widest hover:bg-current/10 transition-colors w-fit"
-            >
-              <span>OPEN FULL STORE &amp; FILTERS</span>
-              <span>→</span>
-            </Link>
+            <div className="flex items-center gap-6">
+              <span className="hidden sm:inline font-mono text-xs uppercase opacity-50">
+                {total} ARTIFACTS
+              </span>
+              <Link
+                href="/store"
+                data-cursor
+                className="inline-flex items-center gap-2 border border-current px-5 py-2.5 font-mono text-xs uppercase font-bold tracking-widest hover:bg-current hover:text-cream dark:hover:text-black transition-colors"
+              >
+                <span>OPEN FULL STORE</span>
+                <span>→</span>
+              </Link>
+            </div>
           </div>
-        </div>
 
-        <div className="px-4 lg:px-6">
           {products.length === 0 ? (
             <div className="my-24 text-center">
               <p className="text-xl uppercase tracking-wider opacity-60">No products found</p>
@@ -137,16 +141,16 @@ export default async function Home({ searchParams }: HomePageProps) {
 
               {/* Any additional products beyond 13 on page 1 */}
               {extra.length > 0 && (
-                 <section className="mb-34 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
-                   {extra.map((p) => (
-                     <ProductCard key={p.handle} product={p} />
-                   ))}
-                 </section>
-               )}
-             </>
-           )}
+                <section className="mb-34 grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
+                  {extra.map((p) => (
+                    <ProductCard key={p.handle} product={p} />
+                  ))}
+                </section>
+              )}
+            </>
+          )}
 
-          {/* Bottom Pagination & Store CTA */}
+          {/* Bottom Pagination & Store Gateway */}
           {products.length > 0 && (
             <HomePagination
               currentPage={currentPage}
@@ -156,9 +160,14 @@ export default async function Home({ searchParams }: HomePageProps) {
               query={q}
             />
           )}
+
+          {/* Studio Referral & Client Privileges */}
+          <ReferralBanner />
+
+          {/* VIP Drop List & Dispatch Alerts */}
+          <NewsletterSignup />
         </div>
 
-        <ReferralBanner />
         <Footer />
       </main>
     </>
